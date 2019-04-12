@@ -1,1 +1,1 @@
-web: gunicorn app:athad-app
+web: gunicorn athad-app:app
