@@ -19,7 +19,7 @@ def scrape():
         listings_data,
         upsert=True
     )
-    return redirect("http://localhost:5000/", code=302)
+    return redirect("http://localhost:5500/", code=302)
 
 @app.route('/get-user-data', methods=['POST'])
 def predict_stuff():
