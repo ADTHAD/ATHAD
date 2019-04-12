@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Heart disease prediction</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+</head>
+<body>
+      <h1 align="center">Heart diease prediction</h1>
+    </div>
+    <br><br>
+    <div class="container">
+    {% if pred: %}
+         <p align="center" style="color:red;"><b>Prediction: {{pred}}</b></p>
+    {% endif %}
+    <div class="jumbotron text-center">
+    <form action="/get-user-data" method="POST">
+        
+        <br><br>
+        <label for="age">Age(in years)</label>
+        <input type="number" name="age" id="age">
+        
+        <br><br>
+
+        <label for="sex">Sex(1=male,0=female)</label>
+        <input type="number" name="sex" id="sex">
+        
+        <br><br>
+
+        <label for="cp">chest pain type(cp)</label>
+        <input type="number" name="cp" id="cp">
+        
+        <br><br>
+        
+        <label for="trestbps">Resting blood pressure(trestbps in mm Hg)</label>
+        <input type="number" name="trestbps" id="trestbps">
+        
+        <br><br>
+        
+        <label for="chol">Serum cholestoral(chol in mg/dl)</label>
+        <input type="number" name="chol" id="chol">
+        
+        <br><br>
+        
+        <label for="fbs">Fasting blood sugar(if fbs >120mg/dl 1=true, 0=false)</label>
+        <input type="number" name="fbs" id="fbs">
+        
+        <br><br>
+        
+        <label for="restecg">Resting electrocardiographic(restecg)</label>
+        <input type="number" name="restecg" id="restecg">
+        
+        <br><br>
+        
+        <label for="thalach">Maximum heart rate achieved(thalach)</label>
+        <input type="number" name="thalach" id="thalach">
+        
+        <br><br>
+        
+        <label for="exang">Exercise induced angina(exang 1=yes,0=no)</label>
+        <input type="number" name="exang" id="exang">
+        
+        <br><br>
+        
+        <label for="oldpeak">ST depression induced by excercise relative to rest(oldpeak)</label>
+        <input type="number" placeholder="1.0" step="0.01" min="0" max="10" name="oldpeak" id="oldpeak">
+
+        <br> <br>
+
+        <label for="slope">The slope of peak exercise ST segment(slope)</label>
+        <input type="number" name="slope" id="slope">
+
+        <br> <br>
+
+        <label for="ca">Number of major vessels (0-3) colored by flourosopy(ca)</label>
+        <input type="number" name="ca" id="ca">
+
+        <br> <br>
+
+        <label for="thal">thal(normal<3, fixed defect=6, reversable defect=7)</label>
+        <input type="number" name="thal" id="thal">
+        <br><br>
+        <input type="submit" value="Predict Heart Diease">
+    </form>
+  </div>
+</body>
+</html>
+
