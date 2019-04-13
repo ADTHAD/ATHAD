@@ -24,8 +24,8 @@ def scrape():
 @app.route('/get-user-data', methods=['POST'])
 def predict_stuff():
     if request.method == 'POST':
-        model_svm = joblib.load('heart_svm_model.pkl')
-        model_rfc = joblib.load('heart_rfc_model.pkl')
+        model_svm = joblib.load("models/heart_disease_models/heart_svm_model.pkl")
+        model_rfc = joblib.load("models/heart_disease_models/heart_rfc_model.pkl")
         print('-----line 27--------')
         
 
@@ -67,7 +67,7 @@ def predict_stuff():
             thal,
             target
         ]
-        df = pd.read_csv("heart.csv")
+        df = pd.read_csv("models/heart_disease_models/heart.csv")
         #Insert the data to csv for preprocessing
         df.loc[303] = [i for i in data]
         a=pd.get_dummies(df['cp'],prefix ="cp")
@@ -83,7 +83,7 @@ def predict_stuff():
         data_to_predict = x.loc[303].tolist()
         
         predicted_result = model_svm.predict(data_to_predict)
-        print(predicted_result)
+        #print(predicted_result)
         if predicted_result[0]==0:
         	result='The person do not have heart disease'
         else:
