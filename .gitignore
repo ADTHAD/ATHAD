@@ -1,4 +1,4 @@
-venv/
+athad-app/
 
 *.pyc
 __pycache__/
