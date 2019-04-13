@@ -19,11 +19,7 @@
     :copyright: (c) 2014 by the Werkzeug Team, see AUTHORS for more details.
     :license: BSD, see LICENSE for more details.
 """
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
-
+from urlparse import urlparse
 from warnings import warn
 
 from werkzeug.datastructures import Headers

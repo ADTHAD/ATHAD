@@ -5,7 +5,7 @@ import math
 
 import numpy.core.numeric as _nx
 from numpy.core.numeric import (
-    asarray, ScalarType, array, alltrue, cumprod, arange
+    asarray, ScalarType, array, alltrue, cumprod, arange, ndim
     )
 from numpy.core.numerictypes import find_common_type, issubdtype
 
@@ -201,7 +201,7 @@ class nd_grid(object):
                 slobj = [_nx.newaxis]*len(size)
                 for k in range(len(size)):
                     slobj[k] = slice(None, None)
-                    nn[k] = nn[k][slobj]
+                    nn[k] = nn[k][tuple(slobj)]
                     slobj[k] = _nx.newaxis
             return nn
         except (IndexError, TypeError):
@@ -299,7 +299,7 @@ class AxisConcatenator(object):
                         if len(vec) == 3:
                             trans1d = int(vec[2])
                         continue
-                    except:
+                    except Exception:
                         raise ValueError("unknown special directive")
                 try:
                     axis = int(item)
@@ -312,21 +312,16 @@ class AxisConcatenator(object):
                 scalar = True
                 scalartypes.append(newobj.dtype)
             else:
-                newobj = item
-                if ndmin > 1:
-                    tempobj = array(newobj, copy=False, subok=True)
-                    newobj = array(newobj, copy=False, subok=True,
-                                   ndmin=ndmin)
-                    if trans1d != -1 and tempobj.ndim < ndmin:
-                        k2 = ndmin-tempobj.ndim
-                        if (trans1d < 0):
-                            trans1d += k2 + 1
-                        defaxes = list(range(ndmin))
-                        k1 = trans1d
-                        axes = defaxes[:k1] + defaxes[k2:] + \
-                               defaxes[k1:k2]
-                        newobj = newobj.transpose(axes)
-                    del tempobj
+                item_ndim = ndim(item)
+                newobj = array(item, copy=False, subok=True, ndmin=ndmin)
+                if trans1d != -1 and item_ndim < ndmin:
+                    k2 = ndmin - item_ndim
+                    k1 = trans1d
+                    if k1 < 0:
+                        k1 += k2 + 1
+                    defaxes = list(range(ndmin))
+                    axes = defaxes[:k1] + defaxes[k2:] + defaxes[k1:k2]
+                    newobj = newobj.transpose(axes)
             objs.append(newobj)
             if not scalar and isinstance(newobj, _nx.ndarray):
                 arraytypes.append(newobj.dtype)
@@ -842,7 +837,7 @@ def diag_indices(n, ndim=2):
 
     And use it to set the diagonal of an array of zeros to 1:
 
-    >>> a = np.zeros((2, 2, 2), dtype=np.int)
+    >>> a = np.zeros((2, 2, 2), dtype=int)
     >>> a[d3] = 1
     >>> a
     array([[[1, 0],

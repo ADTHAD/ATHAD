@@ -328,12 +328,12 @@ def getarrdims(a, var, verbose=0):
         ret['size'] = '*'.join(dim)
         try:
             ret['size'] = repr(eval(ret['size']))
-        except:
+        except Exception:
             pass
         ret['dims'] = ','.join(dim)
         ret['rank'] = repr(len(dim))
         ret['rank*[-1]'] = repr(len(dim) * [-1])[1:-1]
-        for i in range(len(dim)):  # solve dim for dependecies
+        for i in range(len(dim)):  # solve dim for dependencies
             v = []
             if dim[i] in depargs:
                 v = [dim[i]]
@@ -485,7 +485,7 @@ def getinit(a, var):
                 else:
                     v = eval(v, {}, {})
                     ret['init.r'], ret['init.i'] = str(v.real), str(v.imag)
-            except:
+            except Exception:
                 raise ValueError(
                     'getinit: expected complex number `(r,i)\' but got `%s\' as initial value of %r.' % (init, a))
             if isarray(var):

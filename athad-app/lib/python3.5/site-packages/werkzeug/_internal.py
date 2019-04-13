@@ -43,7 +43,7 @@ for _i in chain(range_type(32), range_type(127, 256)):
 _octal_re = re.compile(b'\\\\[0-3][0-7][0-7]')
 _quote_re = re.compile(b'[\\\\].')
 _legal_cookie_chars_re = b'[\w\d!#%&\'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]'
-_cookie_re = re.compile(b"""
+_cookie_re = re.compile(b"""(?x)
     (?P<key>[^=]+)
     \s*=\s*
     (?P<val>
@@ -51,7 +51,7 @@ _cookie_re = re.compile(b"""
          (?:.*?)
     )
     \s*;
-""", flags=re.VERBOSE)
+""")
 
 
 class _Missing(object):
@@ -98,11 +98,7 @@ def _parse_signature(func):
         return parse
 
     # inspect the function signature and collect all the information
-    if hasattr(inspect, 'getfullargspec'):
-        tup = inspect.getfullargspec(func)
-    else:
-        tup = inspect.getargspec(func)
-    positional, vararg_var, kwarg_var, defaults = tup[:4]
+    positional, vararg_var, kwarg_var, defaults = inspect.getargspec(func)
     defaults = defaults or ()
     arg_count = len(positional)
     arguments = []

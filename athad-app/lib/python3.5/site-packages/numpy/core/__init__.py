@@ -24,9 +24,9 @@ files not under version control).  Otherwise reinstall numpy.
 Original error was: %s
 """ % (exc,)
     raise ImportError(msg)
-
-for envkey in env_added:
-    del os.environ[envkey]
+finally:
+    for envkey in env_added:
+        del os.environ[envkey]
 del envkey
 del env_added
 del os
@@ -70,11 +70,6 @@ __all__ += getlimits.__all__
 __all__ += shape_base.__all__
 __all__ += einsumfunc.__all__
 
-
-from numpy.testing.nosetester import _numpy_tester
-test = _numpy_tester().test
-bench = _numpy_tester().bench
-
 # Make it possible so that ufuncs can be pickled
 #  Here are the loading and unloading functions
 # The name numpy.core._ufunc_reconstruct must be
@@ -104,3 +99,7 @@ copyreg.pickle(ufunc, _ufunc_reduce, _ufunc_reconstruct)
 del copyreg
 del sys
 del _ufunc_reduce
+
+from numpy.testing._private.pytesttester import PytestTester
+test = PytestTester(__name__)
+del PytestTester

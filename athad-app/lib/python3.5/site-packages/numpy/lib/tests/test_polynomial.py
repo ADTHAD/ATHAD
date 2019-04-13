@@ -1,15 +1,13 @@
-from __future__ import division, absolute_import, print_function
-
 '''
 >>> p = np.poly1d([1.,2,3])
 >>> p
-poly1d([ 1.,  2.,  3.])
+poly1d([1., 2., 3.])
 >>> print(p)
    2
 1 x + 2 x + 3
 >>> q = np.poly1d([3.,2,1])
 >>> q
-poly1d([ 3.,  2.,  1.])
+poly1d([3., 2., 1.])
 >>> print(q)
    2
 3 x + 2 x + 1
@@ -30,23 +28,23 @@ poly1d([ 3.,  2.,  1.])
 86.0
 
 >>> p * q
-poly1d([  3.,   8.,  14.,   8.,   3.])
+poly1d([ 3.,  8., 14.,  8.,  3.])
 >>> p / q
-(poly1d([ 0.33333333]), poly1d([ 1.33333333,  2.66666667]))
+(poly1d([0.33333333]), poly1d([1.33333333, 2.66666667]))
 >>> p + q
-poly1d([ 4.,  4.,  4.])
+poly1d([4., 4., 4.])
 >>> p - q
 poly1d([-2.,  0.,  2.])
 >>> p ** 4
-poly1d([   1.,    8.,   36.,  104.,  214.,  312.,  324.,  216.,   81.])
+poly1d([  1.,   8.,  36., 104., 214., 312., 324., 216.,  81.])
 
 >>> p(q)
-poly1d([  9.,  12.,  16.,   8.,   6.])
+poly1d([ 9., 12., 16.,  8.,  6.])
 >>> q(p)
-poly1d([  3.,  12.,  32.,  40.,  34.])
+poly1d([ 3., 12., 32., 40., 34.])
 
 >>> np.asarray(p)
-array([ 1.,  2.,  3.])
+array([1., 2., 3.])
 >>> len(p)
 2
 
@@ -54,16 +52,16 @@ array([ 1.,  2.,  3.])
 (3.0, 2.0, 1.0, 0)
 
 >>> p.integ()
-poly1d([ 0.33333333,  1.        ,  3.        ,  0.        ])
+poly1d([0.33333333, 1.        , 3.        , 0.        ])
 >>> p.integ(1)
-poly1d([ 0.33333333,  1.        ,  3.        ,  0.        ])
+poly1d([0.33333333, 1.        , 3.        , 0.        ])
 >>> p.integ(5)
-poly1d([ 0.00039683,  0.00277778,  0.025     ,  0.        ,  0.        ,
-        0.        ,  0.        ,  0.        ])
+poly1d([0.00039683, 0.00277778, 0.025     , 0.        , 0.        ,
+       0.        , 0.        , 0.        ])
 >>> p.deriv()
-poly1d([ 2.,  2.])
+poly1d([2., 2.])
 >>> p.deriv(2)
-poly1d([ 2.])
+poly1d([2.])
 
 >>> q = np.poly1d([1.,2,3], variable='y')
 >>> print(q)
@@ -75,17 +73,19 @@ poly1d([ 2.])
 1 lambda + 2 lambda + 3
 
 >>> np.polydiv(np.poly1d([1,0,-1]), np.poly1d([1,1]))
-(poly1d([ 1., -1.]), poly1d([ 0.]))
+(poly1d([ 1., -1.]), poly1d([0.]))
 
 '''
+from __future__ import division, absolute_import, print_function
+
 import numpy as np
 from numpy.testing import (
-    run_module_suite, TestCase, assert_, assert_equal, assert_array_equal,
-    assert_almost_equal, assert_array_almost_equal, assert_raises, rundocs
+    assert_, assert_equal, assert_array_equal, assert_almost_equal,
+    assert_array_almost_equal, assert_raises, rundocs
     )
 
 
-class TestDocs(TestCase):
+class TestDocs(object):
     def test_doctests(self):
         return rundocs()
 
@@ -222,20 +222,24 @@ class TestDocs(TestCase):
         assert_equal(p == p2, False)
         assert_equal(p != p2, True)
 
-    def test_poly_coeffs_mutable(self):
-        """ Coefficients should be modifiable """
+    def test_polydiv(self):
+        b = np.poly1d([2, 6, 6, 1])
+        a = np.poly1d([-1j, (1+2j), -(2+1j), 1])
+        q, r = np.polydiv(b, a)
+        assert_equal(q.coeffs.dtype, np.complex128)
+        assert_equal(r.coeffs.dtype, np.complex128)
+        assert_equal(q*a + r, b)
+
+    def test_poly_coeffs_immutable(self):
+        """ Coefficients should not be modifiable """
         p = np.poly1d([1, 2, 3])
 
-        p.coeffs += 1
-        assert_equal(p.coeffs, [2, 3, 4])
+        try:
+            # despite throwing an exception, this used to change state
+            p.coeffs += 1
+        except Exception:
+            pass
+        assert_equal(p.coeffs, [1, 2, 3])
 
         p.coeffs[2] += 10
-        assert_equal(p.coeffs, [2, 3, 14])
-
-        # this never used to be allowed - let's not add features to deprecated
-        # APIs
-        assert_raises(AttributeError, setattr, p, 'coeffs', np.array(1))
-
-
-if __name__ == "__main__":
-    run_module_suite()
+        assert_equal(p.coeffs, [1, 2, 3])

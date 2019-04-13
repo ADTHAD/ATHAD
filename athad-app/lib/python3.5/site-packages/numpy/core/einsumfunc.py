@@ -4,14 +4,55 @@ Implementation of optimized einsum.
 """
 from __future__ import division, absolute_import, print_function
 
+import itertools
+
+from numpy.compat import basestring
 from numpy.core.multiarray import c_einsum
-from numpy.core.numeric import asarray, asanyarray, result_type
+from numpy.core.numeric import asarray, asanyarray, result_type, tensordot, dot
 
 __all__ = ['einsum', 'einsum_path']
 
 einsum_symbols = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 einsum_symbols_set = set(einsum_symbols)
 
+
+def _flop_count(idx_contraction, inner, num_terms, size_dictionary):
+    """
+    Computes the number of FLOPS in the contraction.
+
+    Parameters
+    ----------
+    idx_contraction : iterable
+        The indices involved in the contraction
+    inner : bool
+        Does this contraction require an inner product?
+    num_terms : int
+        The number of terms in a contraction
+    size_dictionary : dict
+        The size of each of the indices in idx_contraction
+
+    Returns
+    -------
+    flop_count : int
+        The total number of FLOPS required for the contraction.
+
+    Examples
+    --------
+
+    >>> _flop_count('abc', False, 1, {'a': 2, 'b':3, 'c':5})
+    90
+
+    >>> _flop_count('abc', True, 2, {'a': 2, 'b':3, 'c':5})
+    270
+
+    """
+
+    overall_size = _compute_size_by_dict(idx_contraction, size_dictionary)
+    op_factor = max(1, num_terms - 1)
+    if inner:
+        op_factor += 1
+
+    return overall_size * op_factor
 
 def _compute_size_by_dict(indices, idx_dict):
     """
@@ -138,14 +179,9 @@ def _optimal_path(input_sets, output_set, idx_dict, memory_limit):
         iter_results = []
 
         # Compute all unique pairs
-        comb_iter = []
-        for x in range(len(input_sets) - iteration):
-            for y in range(x + 1, len(input_sets) - iteration):
-                comb_iter.append((x, y))
-
         for curr in full_results:
             cost, positions, remaining = curr
-            for con in comb_iter:
+            for con in itertools.combinations(range(len(input_sets) - iteration), 2):
 
                 # Find the contraction
                 cont = _find_contraction(con, remaining, output_set)
@@ -156,18 +192,19 @@ def _optimal_path(input_sets, output_set, idx_dict, memory_limit):
                 if new_size > memory_limit:
                     continue
 
-                # Find cost
-                new_cost = _compute_size_by_dict(idx_contract, idx_dict)
-                if idx_removed:
-                    new_cost *= 2
-
                 # Build (total_cost, positions, indices_remaining)
-                new_cost += cost
+                total_cost =  cost + _flop_count(idx_contract, idx_removed, len(con), idx_dict)
                 new_pos = positions + [con]
-                iter_results.append((new_cost, new_pos, new_input_sets))
+                iter_results.append((total_cost, new_pos, new_input_sets))
 
-        # Update list to iterate over
-        full_results = iter_results
+        # Update combinatorial list, if we did not find anything return best
+        # path + remaining contractions
+        if iter_results:
+            full_results = iter_results
+        else:
+            path = min(full_results, key=lambda x: x[0])[1]
+            path += [tuple(range(len(input_sets) - iteration))]
+            return path
 
     # If we have not found anything return single einsum contraction
     if len(full_results) == 0:
@@ -176,6 +213,102 @@ def _optimal_path(input_sets, output_set, idx_dict, memory_limit):
     path = min(full_results, key=lambda x: x[0])[1]
     return path
 
+def _parse_possible_contraction(positions, input_sets, output_set, idx_dict, memory_limit, path_cost, naive_cost):
+    """Compute the cost (removed size + flops) and resultant indices for
+    performing the contraction specified by ``positions``.
+
+    Parameters
+    ----------
+    positions : tuple of int
+        The locations of the proposed tensors to contract.
+    input_sets : list of sets
+        The indices found on each tensors.
+    output_set : set
+        The output indices of the expression.
+    idx_dict : dict
+        Mapping of each index to its size.
+    memory_limit : int
+        The total allowed size for an intermediary tensor.
+    path_cost : int
+        The contraction cost so far.
+    naive_cost : int
+        The cost of the unoptimized expression.
+
+    Returns
+    -------
+    cost : (int, int)
+        A tuple containing the size of any indices removed, and the flop cost.
+    positions : tuple of int
+        The locations of the proposed tensors to contract.
+    new_input_sets : list of sets
+        The resulting new list of indices if this proposed contraction is performed.
+
+    """
+
+    # Find the contraction
+    contract = _find_contraction(positions, input_sets, output_set)
+    idx_result, new_input_sets, idx_removed, idx_contract = contract
+
+    # Sieve the results based on memory_limit
+    new_size = _compute_size_by_dict(idx_result, idx_dict)
+    if new_size > memory_limit:
+        return None
+
+    # Build sort tuple
+    old_sizes = (_compute_size_by_dict(input_sets[p], idx_dict) for p in positions)
+    removed_size = sum(old_sizes) - new_size
+
+    # NB: removed_size used to be just the size of any removed indices i.e.:
+    #     helpers.compute_size_by_dict(idx_removed, idx_dict)
+    cost = _flop_count(idx_contract, idx_removed, len(positions), idx_dict)
+    sort = (-removed_size, cost)
+
+    # Sieve based on total cost as well
+    if (path_cost + cost) > naive_cost:
+        return None
+
+    # Add contraction to possible choices
+    return [sort, positions, new_input_sets]
+
+
+def _update_other_results(results, best):
+    """Update the positions and provisional input_sets of ``results`` based on
+    performing the contraction result ``best``. Remove any involving the tensors
+    contracted.
+
+    Parameters
+    ----------
+    results : list
+        List of contraction results produced by ``_parse_possible_contraction``.
+    best : list
+        The best contraction of ``results`` i.e. the one that will be performed.
+
+    Returns
+    -------
+    mod_results : list
+        The list of modifed results, updated with outcome of ``best`` contraction.
+    """
+
+    best_con = best[1]
+    bx, by = best_con
+    mod_results = []
+
+    for cost, (x, y), con_sets in results:
+
+        # Ignore results involving tensors just contracted
+        if x in best_con or y in best_con:
+            continue
+
+        # Update the input_sets
+        del con_sets[by - int(by > x) - int(by > y)]
+        del con_sets[bx - int(bx > x) - int(bx > y)]
+        con_sets.insert(-1, best[2][-1])
+
+        # Update the position indices
+        mod_con = x - int(x > bx) - int(x > by), y - int(y > bx) - int(y > by)
+        mod_results.append((cost, mod_con, con_sets))
+
+    return mod_results
 
 def _greedy_path(input_sets, output_set, idx_dict, memory_limit):
     """
@@ -212,49 +345,180 @@ def _greedy_path(input_sets, output_set, idx_dict, memory_limit):
     [(0, 2), (0, 1)]
     """
 
+    # Handle trivial cases that leaked through
     if len(input_sets) == 1:
         return [(0,)]
+    elif len(input_sets) == 2:
+        return [(0, 1)]
 
+    # Build up a naive cost
+    contract = _find_contraction(range(len(input_sets)), input_sets, output_set)
+    idx_result, new_input_sets, idx_removed, idx_contract = contract
+    naive_cost = _flop_count(idx_contract, idx_removed, len(input_sets), idx_dict)
+
+    # Initially iterate over all pairs
+    comb_iter = itertools.combinations(range(len(input_sets)), 2)
+    known_contractions = []
+
+    path_cost = 0
     path = []
+
     for iteration in range(len(input_sets) - 1):
-        iteration_results = []
-        comb_iter = []
 
-        # Compute all unique pairs
-        for x in range(len(input_sets)):
-            for y in range(x + 1, len(input_sets)):
-                comb_iter.append((x, y))
-
+        # Iterate over all pairs on first step, only previously found pairs on subsequent steps
         for positions in comb_iter:
 
-            # Find the contraction
-            contract = _find_contraction(positions, input_sets, output_set)
-            idx_result, new_input_sets, idx_removed, idx_contract = contract
-
-            # Sieve the results based on memory_limit
-            if _compute_size_by_dict(idx_result, idx_dict) > memory_limit:
+            # Always initially ignore outer products
+            if input_sets[positions[0]].isdisjoint(input_sets[positions[1]]):
                 continue
 
-            # Build sort tuple
-            removed_size = _compute_size_by_dict(idx_removed, idx_dict)
-            cost = _compute_size_by_dict(idx_contract, idx_dict)
-            sort = (-removed_size, cost)
+            result = _parse_possible_contraction(positions, input_sets, output_set, idx_dict, memory_limit, path_cost,
+                                                 naive_cost)
+            if result is not None:
+                known_contractions.append(result)
 
-            # Add contraction to possible choices
-            iteration_results.append([sort, positions, new_input_sets])
+        # If we do not have a inner contraction, rescan pairs including outer products
+        if len(known_contractions) == 0:
 
-        # If we did not find a new contraction contract remaining
-        if len(iteration_results) == 0:
-            path.append(tuple(range(len(input_sets))))
-            break
+            # Then check the outer products
+            for positions in itertools.combinations(range(len(input_sets)), 2):
+                result = _parse_possible_contraction(positions, input_sets, output_set, idx_dict, memory_limit,
+                                                     path_cost, naive_cost)
+                if result is not None:
+                    known_contractions.append(result)
+
+            # If we still did not find any remaining contractions, default back to einsum like behavior
+            if len(known_contractions) == 0:
+                path.append(tuple(range(len(input_sets))))
+                break
 
         # Sort based on first index
-        best = min(iteration_results, key=lambda x: x[0])
-        path.append(best[1])
+        best = min(known_contractions, key=lambda x: x[0])
+
+        # Now propagate as many unused contractions as possible to next iteration
+        known_contractions = _update_other_results(known_contractions, best)
+
+        # Next iteration only compute contractions with the new tensor
+        # All other contractions have been accounted for
         input_sets = best[2]
+        new_tensor_pos = len(input_sets) - 1
+        comb_iter = ((i, new_tensor_pos) for i in range(new_tensor_pos))
+
+        # Update path and total cost
+        path.append(best[1])
+        path_cost += best[0][1]
 
     return path
 
+
+def _can_dot(inputs, result, idx_removed):
+    """
+    Checks if we can use BLAS (np.tensordot) call and its beneficial to do so.
+
+    Parameters
+    ----------
+    inputs : list of str
+        Specifies the subscripts for summation.
+    result : str
+        Resulting summation.
+    idx_removed : set
+        Indices that are removed in the summation
+
+
+    Returns
+    -------
+    type : bool
+        Returns true if BLAS should and can be used, else False
+
+    Notes
+    -----
+    If the operations is BLAS level 1 or 2 and is not already aligned
+    we default back to einsum as the memory movement to copy is more
+    costly than the operation itself.
+
+
+    Examples
+    --------
+
+    # Standard GEMM operation
+    >>> _can_dot(['ij', 'jk'], 'ik', set('j'))
+    True
+
+    # Can use the standard BLAS, but requires odd data movement
+    >>> _can_dot(['ijj', 'jk'], 'ik', set('j'))
+    False
+
+    # DDOT where the memory is not aligned
+    >>> _can_dot(['ijk', 'ikj'], '', set('ijk'))
+    False
+
+    """
+
+    # All `dot` calls remove indices
+    if len(idx_removed) == 0:
+        return False
+
+    # BLAS can only handle two operands
+    if len(inputs) != 2:
+        return False
+
+    input_left, input_right = inputs
+
+    for c in set(input_left + input_right):
+        # can't deal with repeated indices on same input or more than 2 total
+        nl, nr = input_left.count(c), input_right.count(c)
+        if (nl > 1) or (nr > 1) or (nl + nr > 2):
+            return False
+
+        # can't do implicit summation or dimension collapse e.g.
+        #     "ab,bc->c" (implicitly sum over 'a')
+        #     "ab,ca->ca" (take diagonal of 'a')
+        if nl + nr - 1 == int(c in result):
+            return False
+
+    # Build a few temporaries
+    set_left = set(input_left)
+    set_right = set(input_right)
+    keep_left = set_left - idx_removed
+    keep_right = set_right - idx_removed
+    rs = len(idx_removed)
+
+    # At this point we are a DOT, GEMV, or GEMM operation
+
+    # Handle inner products
+
+    # DDOT with aligned data
+    if input_left == input_right:
+        return True
+
+    # DDOT without aligned data (better to use einsum)
+    if set_left == set_right:
+        return False
+
+    # Handle the 4 possible (aligned) GEMV or GEMM cases
+
+    # GEMM or GEMV no transpose
+    if input_left[-rs:] == input_right[:rs]:
+        return True
+
+    # GEMM or GEMV transpose both
+    if input_left[:rs] == input_right[-rs:]:
+        return True
+
+    # GEMM or GEMV transpose right
+    if input_left[-rs:] == input_right[-rs:]:
+        return True
+
+    # GEMM or GEMV transpose left
+    if input_left[:rs] == input_right[:rs]:
+        return True
+
+    # Einsum is faster than GEMV if we have to copy data
+    if not keep_left or not keep_right:
+        return False
+
+    # We are a matrix-matrix product, but we need to copy data
+    return True
 
 def _parse_einsum_input(operands):
     """
@@ -285,7 +549,7 @@ def _parse_einsum_input(operands):
     if len(operands) == 0:
         raise ValueError("No input operands")
 
-    if isinstance(operands[0], str):
+    if isinstance(operands[0], basestring):
         subscripts = operands[0].replace(" ", "")
         operands = [asanyarray(v) for v in operands[1:]]
 
@@ -481,7 +745,7 @@ def einsum_path(*operands, **kwargs):
     --------
 
     We can begin with a chain dot example. In this case, it is optimal to
-    contract the ``b`` and ``c`` tensors first as reprsented by the first
+    contract the ``b`` and ``c`` tensors first as represented by the first
     element of the path ``(1, 2)``. The resulting tensor is added to the end
     of the contraction and the remaining contraction ``(0, 1)`` is then
     completed.
@@ -542,7 +806,7 @@ def einsum_path(*operands, **kwargs):
                         " %s" % unknown_kwargs)
 
     # Figure out what the path really is
-    path_type = kwargs.pop('optimize', False)
+    path_type = kwargs.pop('optimize', True)
     if path_type is True:
         path_type = 'greedy'
     if path_type is None:
@@ -551,7 +815,7 @@ def einsum_path(*operands, **kwargs):
     memory_limit = None
 
     # No optimization or a named path algorithm
-    if (path_type is False) or isinstance(path_type, str):
+    if (path_type is False) or isinstance(path_type, basestring):
         pass
 
     # Given an explicit path
@@ -559,7 +823,7 @@ def einsum_path(*operands, **kwargs):
         pass
 
     # Path tuple with memory limit
-    elif ((len(path_type) == 2) and isinstance(path_type[0], str) and
+    elif ((len(path_type) == 2) and isinstance(path_type[0], basestring) and
             isinstance(path_type[1], (int, float))):
         memory_limit = int(path_type[1])
         path_type = path_type[0]
@@ -582,20 +846,33 @@ def einsum_path(*operands, **kwargs):
 
     # Get length of each unique dimension and ensure all dimensions are correct
     dimension_dict = {}
+    broadcast_indices = [[] for x in range(len(input_list))]
     for tnum, term in enumerate(input_list):
         sh = operands[tnum].shape
         if len(sh) != len(term):
             raise ValueError("Einstein sum subscript %s does not contain the "
-                             "correct number of indices for operand %d.",
-                             input_subscripts[tnum], tnum)
+                             "correct number of indices for operand %d."
+                             % (input_subscripts[tnum], tnum))
         for cnum, char in enumerate(term):
             dim = sh[cnum]
+
+            # Build out broadcast indices
+            if dim == 1:
+                broadcast_indices[tnum].append(char)
+
             if char in dimension_dict.keys():
-                if dimension_dict[char] != dim:
-                    raise ValueError("Size of label '%s' for operand %d does "
-                                     "not match previous terms.", char, tnum)
+                # For broadcasting cases we always want the largest dim size
+                if dimension_dict[char] == 1:
+                    dimension_dict[char] = dim
+                elif dim not in (1, dimension_dict[char]):
+                    raise ValueError("Size of label '%s' for operand %d (%d) "
+                                     "does not match previous terms (%d)."
+                                     % (char, tnum, dimension_dict[char], dim))
             else:
                 dimension_dict[char] = dim
+
+    # Convert broadcast inds to sets
+    broadcast_indices = [set(x) for x in broadcast_indices]
 
     # Compute size of each input array plus the output array
     size_list = []
@@ -609,21 +886,15 @@ def einsum_path(*operands, **kwargs):
         memory_arg = memory_limit
 
     # Compute naive cost
-    # This isnt quite right, need to look into exactly how einsum does this
-    naive_cost = _compute_size_by_dict(indices, dimension_dict)
-    indices_in_input = input_subscripts.replace(',', '')
-    mult = max(len(input_list) - 1, 1)
-    if (len(indices_in_input) - len(set(indices_in_input))):
-        mult *= 2
-    naive_cost *= mult
+    # This isn't quite right, need to look into exactly how einsum does this
+    inner_product = (sum(len(x) for x in input_sets) - len(indices)) > 0
+    naive_cost = _flop_count(indices, inner_product, len(input_list), dimension_dict)
 
     # Compute the path
     if (path_type is False) or (len(input_list) in [1, 2]) or (indices == output_set):
         # Nothing to be optimized, leave it to einsum
         path = [tuple(range(len(input_list)))]
     elif path_type == "greedy":
-        # Maximum memory should be at most out_size for this algorithm
-        memory_arg = min(memory_arg, max_size)
         path = _greedy_path(input_sets, output_set, dimension_dict, memory_arg)
     elif path_type == "optimal":
         path = _optimal_path(input_sets, output_set, dimension_dict, memory_arg)
@@ -642,16 +913,24 @@ def einsum_path(*operands, **kwargs):
         contract = _find_contraction(contract_inds, input_sets, output_set)
         out_inds, input_sets, idx_removed, idx_contract = contract
 
-        cost = _compute_size_by_dict(idx_contract, dimension_dict)
-        if idx_removed:
-            cost *= 2
+        cost = _flop_count(idx_contract, idx_removed, len(contract_inds), dimension_dict)
         cost_list.append(cost)
         scale_list.append(len(idx_contract))
         size_list.append(_compute_size_by_dict(out_inds, dimension_dict))
 
+        bcast = set()
         tmp_inputs = []
         for x in contract_inds:
             tmp_inputs.append(input_list.pop(x))
+            bcast |= broadcast_indices.pop(x)
+
+        new_bcast_inds = bcast - idx_removed
+
+        # If we're broadcasting, nix blas
+        if not len(idx_removed & bcast):
+            do_blas = _can_dot(tmp_inputs, out_inds, idx_removed)
+        else:
+            do_blas = False
 
         # Last contraction
         if (cnum - len(path)) == -1:
@@ -661,9 +940,10 @@ def einsum_path(*operands, **kwargs):
             idx_result = "".join([x[1] for x in sorted(sort_result)])
 
         input_list.append(idx_result)
+        broadcast_indices.append(new_bcast_inds)
         einsum_str = ",".join(tmp_inputs) + "->" + idx_result
 
-        contraction = (contract_inds, idx_removed, einsum_str, input_list[:])
+        contraction = (contract_inds, idx_removed, einsum_str, input_list[:], do_blas)
         contraction_list.append(contraction)
 
     opt_cost = sum(cost_list) + 1
@@ -690,7 +970,7 @@ def einsum_path(*operands, **kwargs):
     path_print += "-" * 74
 
     for n, contraction in enumerate(contraction_list):
-        inds, idx_rm, einsum_str, remaining = contraction
+        inds, idx_rm, einsum_str, remaining, blas = contraction
         remaining_str = ",".join(remaining) + "->" + output_subscript
         path_run = (scale_list[n], einsum_str, remaining_str)
         path_print += "\n%4d    %24s %40s" % path_run
@@ -748,7 +1028,7 @@ def einsum(*operands, **kwargs):
         Controls if intermediate optimization should occur. No optimization
         will occur if False and True will default to the 'greedy' algorithm.
         Also accepts an explicit contraction list from the ``np.einsum_path``
-        function. See ``np.einsum_path`` for more details. Default is False.
+        function. See ``np.einsum_path`` for more details. Default is True.
 
     Returns
     -------
@@ -940,7 +1220,7 @@ def einsum(*operands, **kwargs):
 
     """
 
-    # Grab non-einsum kwargs
+    # Grab non-einsum kwargs; do not optimize by default.
     optimize_arg = kwargs.pop('optimize', False)
 
     # If no optimization, run pure einsum
@@ -969,21 +1249,54 @@ def einsum(*operands, **kwargs):
     # Build the contraction list and operand
     operands, contraction_list = einsum_path(*operands, optimize=optimize_arg,
                                              einsum_call=True)
+
+    handle_out = False
+
     # Start contraction loop
     for num, contraction in enumerate(contraction_list):
-        inds, idx_rm, einsum_str, remaining = contraction
+        inds, idx_rm, einsum_str, remaining, blas = contraction
         tmp_operands = []
         for x in inds:
             tmp_operands.append(operands.pop(x))
 
-        # If out was specified
-        if specified_out and ((num + 1) == len(contraction_list)):
-            einsum_kwargs["out"] = out_array
+        # Do we need to deal with the output?
+        handle_out = specified_out and ((num + 1) == len(contraction_list))
 
-        # Do the contraction
-        new_view = c_einsum(einsum_str, *tmp_operands, **einsum_kwargs)
+        # Call tensordot if still possible
+        if blas:
+            # Checks have already been handled
+            input_str, results_index = einsum_str.split('->')
+            input_left, input_right = input_str.split(',')
 
-        # Append new items and derefernce what we can
+            tensor_result = input_left + input_right
+            for s in idx_rm:
+                tensor_result = tensor_result.replace(s, "")
+
+            # Find indices to contract over
+            left_pos, right_pos = [], []
+            for s in idx_rm:
+                left_pos.append(input_left.find(s))
+                right_pos.append(input_right.find(s))
+
+            # Contract!
+            new_view = tensordot(*tmp_operands, axes=(tuple(left_pos), tuple(right_pos)))
+
+            # Build a new view if needed
+            if (tensor_result != results_index) or handle_out:
+                if handle_out:
+                    einsum_kwargs["out"] = out_array
+                new_view = c_einsum(tensor_result + '->' + results_index, new_view, **einsum_kwargs)
+
+        # Call einsum
+        else:
+            # If out was specified
+            if handle_out:
+                einsum_kwargs["out"] = out_array
+
+            # Do the contraction
+            new_view = c_einsum(einsum_str, *tmp_operands, **einsum_kwargs)
+
+        # Append new items and dereference what we can
         operands.append(new_view)
         del tmp_operands, new_view
 

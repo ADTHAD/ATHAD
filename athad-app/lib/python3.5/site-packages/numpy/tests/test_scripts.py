@@ -4,15 +4,15 @@ Test that we can run executable scripts that have been installed with numpy.
 """
 from __future__ import division, print_function, absolute_import
 
-import os
-from os.path import join as pathjoin, isfile, dirname, basename
 import sys
+import os
+import pytest
+from os.path import join as pathjoin, isfile, dirname, basename
 from subprocess import Popen, PIPE
+
 import numpy as np
 from numpy.compat.py3k import basestring
-from nose.tools import assert_equal
-from numpy.testing.decorators import skipif
-from numpy.testing import assert_
+from numpy.testing import assert_, assert_equal
 
 is_inplace = isfile(pathjoin(dirname(np.__file__),  '..', 'setup.py'))
 
@@ -59,7 +59,8 @@ def run_command(cmd, check_code=True):
     return proc.returncode, stdout, stderr
 
 
-@skipif(is_inplace)
+@pytest.mark.skipif(is_inplace, reason="Cannot test f2py command inplace")
+@pytest.mark.xfail(reason="Test is unreliable")
 def test_f2py():
     # test that we can run f2py script
     if sys.platform == 'win32':
@@ -87,7 +88,7 @@ def test_f2py():
                 assert_equal(stdout.strip(), b'2')
                 success = True
                 break
-            except:
+            except Exception:
                 pass
         msg = "Warning: neither %s nor %s nor %s found in path" % f2py_cmds
         assert_(success, msg)

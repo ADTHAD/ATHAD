@@ -9,11 +9,13 @@ import datetime
 import sys
 import operator
 import warnings
+import pytest
 
 import numpy as np
 from numpy.testing import (
-    run_module_suite, assert_raises, assert_warns, assert_no_warnings,
-    assert_array_equal, assert_, dec)
+    assert_raises, assert_warns, assert_no_warnings, assert_array_equal,
+    assert_
+    )
 
 try:
     import pytz
@@ -28,7 +30,7 @@ class _DeprecationTestCase(object):
     message = ''
     warning_cls = DeprecationWarning
 
-    def setUp(self):
+    def setup(self):
         self.warn_ctx = warnings.catch_warnings(record=True)
         self.log = self.warn_ctx.__enter__()
 
@@ -42,7 +44,7 @@ class _DeprecationTestCase(object):
         warnings.filterwarnings("always", message=self.message,
                                 category=self.warning_cls)
 
-    def tearDown(self):
+    def teardown(self):
         self.warn_ctx.__exit__()
 
     def assert_deprecated(self, function, num=1, ignore_others=False,
@@ -132,22 +134,20 @@ class _VisibleDeprecationTestCase(_DeprecationTestCase):
     warning_cls = np.VisibleDeprecationWarning
 
 
-class TestBooleanBinaryMinusDeprecation(_DeprecationTestCase):
-    """Test deprecation of binary boolean `-`. While + and * are well
-    defined, binary  - is not and even a corrected form seems to have
-    no real uses.
+class TestNonTupleNDIndexDeprecation(object):
+    def test_basic(self):
+        a = np.zeros((5, 5))
+        with warnings.catch_warnings():
+            warnings.filterwarnings('always')
+            assert_warns(FutureWarning, a.__getitem__, [[0, 1], [0, 1]])
+            assert_warns(FutureWarning, a.__getitem__, [slice(None)])
 
-    The deprecation process was started in NumPy 1.9.
-    """
-    message = r"numpy boolean subtract, the `-` operator, .*"
+            warnings.filterwarnings('error')
+            assert_raises(FutureWarning, a.__getitem__, [[0, 1], [0, 1]])
+            assert_raises(FutureWarning, a.__getitem__, [slice(None)])
 
-    def test_operator_deprecation(self):
-        array = np.array([True])
-        generic = np.bool_(True)
-
-        # Minus operator/subtract ufunc:
-        self.assert_deprecated(operator.sub, args=(array, array))
-        self.assert_deprecated(operator.sub, args=(generic, generic))
+            # a a[[0, 1]] always was advanced indexing, so no error/warning
+            a[[0, 1]]
 
 
 class TestRankDeprecation(_DeprecationTestCase):
@@ -260,7 +260,8 @@ class TestDatetime64Timezone(_DeprecationTestCase):
         self.assert_deprecated(np.datetime64, args=('2000-01-01T00+01',))
         self.assert_deprecated(np.datetime64, args=('2000-01-01T00Z',))
 
-    @dec.skipif(not _has_pytz, "The pytz module is not available.")
+    @pytest.mark.skipif(not _has_pytz,
+                        reason="The pytz module is not available.")
     def test_datetime(self):
         tz = pytz.timezone('US/Eastern')
         dt = datetime.datetime(2000, 1, 1, 0, 0, tzinfo=tz)
@@ -277,7 +278,7 @@ class TestNonCContiguousViewDeprecation(_DeprecationTestCase):
     """
 
     def test_fortran_contiguous(self):
-        self.assert_deprecated(np.ones((2,2)).T.view, args=(np.complex,))
+        self.assert_deprecated(np.ones((2,2)).T.view, args=(complex,))
         self.assert_deprecated(np.ones((2,2)).T.view, args=(np.int8,))
 
 
@@ -394,20 +395,10 @@ class TestNumericStyleTypecodes(_DeprecationTestCase):
                                    args=(dt,))
 
 
-class TestAccumulateKeepDims(_DeprecationTestCase):
-    """
-    Deprecate the keepdims argument to np.ufunc.accumulate, which was never used or documented
-    """
-    def test_keepdims(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('always', '', FutureWarning)
-            assert_warns(FutureWarning, np.add.accumulate, [1], keepdims=True)
-
-
 class TestTestDeprecated(object):
     def test_assert_deprecated(self):
         test_case_instance = _DeprecationTestCase()
-        test_case_instance.setUp()
+        test_case_instance.setup()
         assert_raises(AssertionError,
                       test_case_instance.assert_deprecated,
                       lambda: None)
@@ -416,7 +407,7 @@ class TestTestDeprecated(object):
             warnings.warn("foo", category=DeprecationWarning, stacklevel=2)
 
         test_case_instance.assert_deprecated(foo)
-        test_case_instance.tearDown()
+        test_case_instance.teardown()
 
 
 class TestClassicIntDivision(_DeprecationTestCase):
@@ -457,10 +448,65 @@ class TestNonNumericConjugate(_DeprecationTestCase):
 class TestNPY_CHAR(_DeprecationTestCase):
     # 2017-05-03, 1.13.0
     def test_npy_char_deprecation(self):
-        from numpy.core.multiarray_tests import npy_char_deprecation
+        from numpy.core._multiarray_tests import npy_char_deprecation
         self.assert_deprecated(npy_char_deprecation)
         assert_(npy_char_deprecation() == 'S1')
 
 
-if __name__ == "__main__":
-    run_module_suite()
+class Test_UPDATEIFCOPY(_DeprecationTestCase):
+    """
+    v1.14 deprecates creating an array with the UPDATEIFCOPY flag, use
+    WRITEBACKIFCOPY instead
+    """
+    def test_npy_updateifcopy_deprecation(self):
+        from numpy.core._multiarray_tests import npy_updateifcopy_deprecation
+        arr = np.arange(9).reshape(3, 3)
+        v = arr.T
+        self.assert_deprecated(npy_updateifcopy_deprecation, args=(v,))
+
+
+class TestDatetimeEvent(_DeprecationTestCase):
+    # 2017-08-11, 1.14.0
+    def test_3_tuple(self):
+        for cls in (np.datetime64, np.timedelta64):
+            # two valid uses - (unit, num) and (unit, num, den, None)
+            self.assert_not_deprecated(cls, args=(1, ('ms', 2)))
+            self.assert_not_deprecated(cls, args=(1, ('ms', 2, 1, None)))
+
+            # trying to use the event argument, removed in 1.7.0, is deprecated
+            # it used to be a uint8
+            self.assert_deprecated(cls, args=(1, ('ms', 2, 'event')))
+            self.assert_deprecated(cls, args=(1, ('ms', 2, 63)))
+            self.assert_deprecated(cls, args=(1, ('ms', 2, 1, 'event')))
+            self.assert_deprecated(cls, args=(1, ('ms', 2, 1, 63)))
+
+
+class TestTruthTestingEmptyArrays(_DeprecationTestCase):
+    # 2017-09-25, 1.14.0
+    message = '.*truth value of an empty array is ambiguous.*'
+
+    def test_1d(self):
+        self.assert_deprecated(bool, args=(np.array([]),))
+
+    def test_2d(self):
+        self.assert_deprecated(bool, args=(np.zeros((1, 0)),))
+        self.assert_deprecated(bool, args=(np.zeros((0, 1)),))
+        self.assert_deprecated(bool, args=(np.zeros((0, 0)),))
+
+
+class TestBincount(_DeprecationTestCase):
+    # 2017-06-01, 1.14.0
+    def test_bincount_minlength(self):
+        self.assert_deprecated(lambda: np.bincount([1, 2, 3], minlength=None))
+
+
+class TestGeneratorSum(_DeprecationTestCase):
+    # 2018-02-25, 1.15.0
+    def test_generator_sum(self):
+        self.assert_deprecated(np.sum, args=((i for i in range(5)),))
+
+
+class TestFromstring(_DeprecationTestCase):
+    # 2017-10-19, 1.14
+    def test_fromstring(self):
+        self.assert_deprecated(np.fromstring, args=('\x00'*80,))

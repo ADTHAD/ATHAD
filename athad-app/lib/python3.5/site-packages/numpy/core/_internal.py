@@ -9,7 +9,7 @@ from __future__ import division, absolute_import, print_function
 import re
 import sys
 
-from numpy.compat import basestring
+from numpy.compat import basestring, unicode
 from .multiarray import dtype, array, ndarray
 try:
     import ctypes
@@ -110,6 +110,10 @@ def _array_descr(descriptor):
             num = field[1] - offset
             result.append(('', '|V%d' % num))
             offset += num
+        elif field[1] < offset:
+            raise ValueError(
+                "dtype.descr is not defined for types with overlapping or "
+                "out-of-order fields")
         if len(field) > 3:
             name = (field[2], field[3])
         else:
@@ -206,6 +210,8 @@ class dummy_ctype(object):
         return self._cls(other)
     def __eq__(self, other):
         return self._cls == other._cls
+    def __ne__(self, other):
+        return self._cls != other._cls
 
 def _getintp_ctype():
     val = _getintp_ctype.cache
@@ -281,20 +287,26 @@ class _ctypes(object):
     _as_parameter_ = property(get_as_parameter, None, doc="_as parameter_")
 
 
-# Given a datatype and an order object
-#  return a new names tuple
-#  with the order indicated
 def _newnames(datatype, order):
+    """
+    Given a datatype and an order object, return a new names tuple, with the
+    order indicated
+    """
     oldnames = datatype.names
     nameslist = list(oldnames)
-    if isinstance(order, str):
+    if isinstance(order, (str, unicode)):
         order = [order]
+    seen = set()
     if isinstance(order, (list, tuple)):
         for name in order:
             try:
                 nameslist.remove(name)
             except ValueError:
-                raise ValueError("unknown field name: %s" % (name,))
+                if name in seen:
+                    raise ValueError("duplicate field name: %s" % (name,))
+                else:
+                    raise ValueError("unknown field name: %s" % (name,))
+            seen.add(name)
         return tuple(list(order) + nameslist)
     raise ValueError("unsupported order value: %s" % (order,))
 
@@ -744,3 +756,16 @@ def _ufunc_doc_signature_formatter(ufunc):
         out_args=out_args,
         kwargs=kwargs
     )
+
+
+def _is_from_ctypes(obj):
+    # determine if an object comes from ctypes, in order to work around
+    # a bug in the buffer protocol for those objects, bpo-10746
+    try:
+        # ctypes class are new-style, so have an __mro__. This probably fails
+        # for ctypes classes with multiple inheritance.
+        ctype_base = type(obj).__mro__[-2]
+        # right now, they're part of the _ctypes module
+        return 'ctypes' in ctype_base.__module__
+    except Exception:
+        return False

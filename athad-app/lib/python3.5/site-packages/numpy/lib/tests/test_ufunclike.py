@@ -4,12 +4,11 @@ import numpy as np
 import numpy.core as nx
 import numpy.lib.ufunclike as ufl
 from numpy.testing import (
-    run_module_suite, TestCase, assert_, assert_equal, assert_array_equal,
-    assert_warns
+    assert_, assert_equal, assert_array_equal, assert_warns
     )
 
 
-class TestUfunclike(TestCase):
+class TestUfunclike(object):
 
     def test_isposinf(self):
         a = nx.array([nx.inf, -nx.inf, nx.nan, 0.0, 3.0, -3.0])
@@ -56,6 +55,10 @@ class TestUfunclike(TestCase):
                 obj.metadata = self.metadata
                 return obj
 
+            def __array_finalize__(self, obj):
+                self.metadata = getattr(obj, 'metadata', None)
+                return self
+
         a = nx.array([1.1, -1.1])
         m = MyArray(a, metadata='foo')
         f = ufl.fix(m)
@@ -92,6 +95,3 @@ class TestUfunclike(TestCase):
         out = np.array(0.0)
         actual = np.fix(x, out=out)
         assert_(actual is out)
-
-if __name__ == "__main__":
-    run_module_suite()

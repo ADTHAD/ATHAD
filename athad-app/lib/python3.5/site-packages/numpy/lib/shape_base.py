@@ -4,7 +4,7 @@ import warnings
 
 import numpy.core.numeric as _nx
 from numpy.core.numeric import (
-    asarray, zeros, outer, concatenate, isscalar, array, asanyarray
+    asarray, zeros, outer, concatenate, array, asanyarray
     )
 from numpy.core.fromnumeric import product, reshape, transpose
 from numpy.core.multiarray import normalize_axis_index
@@ -16,8 +16,233 @@ from numpy.matrixlib.defmatrix import matrix  # this raises all the right alarm 
 __all__ = [
     'column_stack', 'row_stack', 'dstack', 'array_split', 'split',
     'hsplit', 'vsplit', 'dsplit', 'apply_over_axes', 'expand_dims',
-    'apply_along_axis', 'kron', 'tile', 'get_array_wrap'
+    'apply_along_axis', 'kron', 'tile', 'get_array_wrap', 'take_along_axis',
+    'put_along_axis'
     ]
+
+
+def _make_along_axis_idx(arr_shape, indices, axis):
+	# compute dimensions to iterate over
+    if not _nx.issubdtype(indices.dtype, _nx.integer):
+        raise IndexError('`indices` must be an integer array')
+    if len(arr_shape) != indices.ndim:
+        raise ValueError(
+            "`indices` and `arr` must have the same number of dimensions")
+    shape_ones = (1,) * indices.ndim
+    dest_dims = list(range(axis)) + [None] + list(range(axis+1, indices.ndim))
+
+    # build a fancy index, consisting of orthogonal aranges, with the
+    # requested index inserted at the right location
+    fancy_index = []
+    for dim, n in zip(dest_dims, arr_shape):
+        if dim is None:
+            fancy_index.append(indices)
+        else:
+            ind_shape = shape_ones[:dim] + (-1,) + shape_ones[dim+1:]
+            fancy_index.append(_nx.arange(n).reshape(ind_shape))
+
+    return tuple(fancy_index)
+
+
+def take_along_axis(arr, indices, axis):
+    """
+    Take values from the input array by matching 1d index and data slices.
+
+    This iterates over matching 1d slices oriented along the specified axis in
+    the index and data arrays, and uses the former to look up values in the
+    latter. These slices can be different lengths.
+
+    Functions returning an index along an axis, like `argsort` and
+    `argpartition`, produce suitable indices for this function.
+
+    .. versionadded:: 1.15.0
+
+    Parameters
+    ----------
+    arr: ndarray (Ni..., M, Nk...)
+        Source array
+    indices: ndarray (Ni..., J, Nk...)
+        Indices to take along each 1d slice of `arr`. This must match the
+        dimension of arr, but dimensions Ni and Nj only need to broadcast
+        against `arr`.
+    axis: int
+        The axis to take 1d slices along. If axis is None, the input array is
+        treated as if it had first been flattened to 1d, for consistency with
+        `sort` and `argsort`.
+
+    Returns
+    -------
+    out: ndarray (Ni..., J, Nk...)
+        The indexed result.
+
+    Notes
+    -----
+    This is equivalent to (but faster than) the following use of `ndindex` and
+    `s_`, which sets each of ``ii`` and ``kk`` to a tuple of indices::
+
+        Ni, M, Nk = a.shape[:axis], a.shape[axis], a.shape[axis+1:]
+        J = indices.shape[axis]  # Need not equal M
+        out = np.empty(Nk + (J,) + Nk)
+
+        for ii in ndindex(Ni):
+            for kk in ndindex(Nk):
+                a_1d       = a      [ii + s_[:,] + kk]
+                indices_1d = indices[ii + s_[:,] + kk]
+                out_1d     = out    [ii + s_[:,] + kk]
+                for j in range(J):
+                    out_1d[j] = a_1d[indices_1d[j]]
+
+    Equivalently, eliminating the inner loop, the last two lines would be::
+
+                out_1d[:] = a_1d[indices_1d]
+
+    See Also
+    --------
+    take : Take along an axis, using the same indices for every 1d slice
+    put_along_axis :
+        Put values into the destination array by matching 1d index and data slices
+
+    Examples
+    --------
+
+    For this sample array
+
+    >>> a = np.array([[10, 30, 20], [60, 40, 50]])
+
+    We can sort either by using sort directly, or argsort and this function
+
+    >>> np.sort(a, axis=1)
+    array([[10, 20, 30],
+           [40, 50, 60]])
+    >>> ai = np.argsort(a, axis=1); ai
+    array([[0, 2, 1],
+           [1, 2, 0]], dtype=int64)
+    >>> np.take_along_axis(a, ai, axis=1)
+    array([[10, 20, 30],
+           [40, 50, 60]])
+
+    The same works for max and min, if you expand the dimensions:
+
+    >>> np.expand_dims(np.max(a, axis=1), axis=1)
+    array([[30],
+           [60]])
+    >>> ai = np.expand_dims(np.argmax(a, axis=1), axis=1)
+    >>> ai
+    array([[1],
+           [0], dtype=int64)
+    >>> np.take_along_axis(a, ai, axis=1)
+    array([[30],
+           [60]])
+
+    If we want to get the max and min at the same time, we can stack the
+    indices first
+
+    >>> ai_min = np.expand_dims(np.argmin(a, axis=1), axis=1)
+    >>> ai_max = np.expand_dims(np.argmax(a, axis=1), axis=1)
+    >>> ai = np.concatenate([ai_min, ai_max], axis=axis)
+    >> ai
+    array([[0, 1],
+           [1, 0]], dtype=int64)
+    >>> np.take_along_axis(a, ai, axis=1)
+    array([[10, 30],
+           [40, 60]])
+    """
+    # normalize inputs
+    if axis is None:
+        arr = arr.flat
+        arr_shape = (len(arr),)  # flatiter has no .shape
+        axis = 0
+    else:
+        axis = normalize_axis_index(axis, arr.ndim)
+        arr_shape = arr.shape
+
+    # use the fancy index
+    return arr[_make_along_axis_idx(arr_shape, indices, axis)]
+
+
+def put_along_axis(arr, indices, values, axis):
+    """
+    Put values into the destination array by matching 1d index and data slices.
+
+    This iterates over matching 1d slices oriented along the specified axis in
+    the index and data arrays, and uses the former to place values into the
+    latter. These slices can be different lengths.
+
+    Functions returning an index along an axis, like `argsort` and
+    `argpartition`, produce suitable indices for this function.
+
+    .. versionadded:: 1.15.0
+
+    Parameters
+    ----------
+    arr: ndarray (Ni..., M, Nk...)
+        Destination array.
+    indices: ndarray (Ni..., J, Nk...)
+        Indices to change along each 1d slice of `arr`. This must match the
+        dimension of arr, but dimensions in Ni and Nj may be 1 to broadcast
+        against `arr`.
+    values: array_like (Ni..., J, Nk...)
+        values to insert at those indices. Its shape and dimension are
+        broadcast to match that of `indices`.
+    axis: int
+        The axis to take 1d slices along. If axis is None, the destination
+        array is treated as if a flattened 1d view had been created of it.
+
+    Notes
+    -----
+    This is equivalent to (but faster than) the following use of `ndindex` and
+    `s_`, which sets each of ``ii`` and ``kk`` to a tuple of indices::
+
+        Ni, M, Nk = a.shape[:axis], a.shape[axis], a.shape[axis+1:]
+        J = indices.shape[axis]  # Need not equal M
+
+        for ii in ndindex(Ni):
+            for kk in ndindex(Nk):
+                a_1d       = a      [ii + s_[:,] + kk]
+                indices_1d = indices[ii + s_[:,] + kk]
+                values_1d  = values [ii + s_[:,] + kk]
+                for j in range(J):
+                    a_1d[indices_1d[j]] = values_1d[j]
+
+    Equivalently, eliminating the inner loop, the last two lines would be::
+
+                a_1d[indices_1d] = values_1d
+
+    See Also
+    --------
+    take_along_axis :
+        Take values from the input array by matching 1d index and data slices
+
+    Examples
+    --------
+
+    For this sample array
+
+    >>> a = np.array([[10, 30, 20], [60, 40, 50]])
+
+    We can replace the maximum values with:
+
+    >>> ai = np.expand_dims(np.argmax(a, axis=1), axis=1)
+    >>> ai
+    array([[1],
+           [0]], dtype=int64)
+    >>> np.put_along_axis(a, ai, 99, axis=1)
+    >>> a
+    array([[10, 99, 20],
+           [99, 40, 50]])
+
+    """
+    # normalize inputs
+    if axis is None:
+        arr = arr.flat
+        axis = 0
+        arr_shape = (len(arr),)  # flatiter has no .shape
+    else:
+        axis = normalize_axis_index(axis, arr.ndim)
+        arr_shape = arr.shape
+
+    # use the fancy index
+    arr[_make_along_axis_idx(arr_shape, indices, axis)] = values
 
 
 def apply_along_axis(func1d, axis, arr, *args, **kwargs):
@@ -27,14 +252,32 @@ def apply_along_axis(func1d, axis, arr, *args, **kwargs):
     Execute `func1d(a, *args)` where `func1d` operates on 1-D arrays and `a`
     is a 1-D slice of `arr` along `axis`.
 
+    This is equivalent to (but faster than) the following use of `ndindex` and
+    `s_`, which sets each of ``ii``, ``jj``, and ``kk`` to a tuple of indices::
+
+        Ni, Nk = a.shape[:axis], a.shape[axis+1:]
+        for ii in ndindex(Ni):
+            for kk in ndindex(Nk):
+                f = func1d(arr[ii + s_[:,] + kk])
+                Nj = f.shape
+                for jj in ndindex(Nj):
+                    out[ii + jj + kk] = f[jj]
+
+    Equivalently, eliminating the inner loop, this can be expressed as::
+
+        Ni, Nk = a.shape[:axis], a.shape[axis+1:]
+        for ii in ndindex(Ni):
+            for kk in ndindex(Nk):
+                out[ii + s_[...,] + kk] = func1d(arr[ii + s_[:,] + kk])
+
     Parameters
     ----------
-    func1d : function
+    func1d : function (M,) -> (Nj...)
         This function should accept 1-D arrays. It is applied to 1-D
         slices of `arr` along the specified axis.
     axis : integer
         Axis along which `arr` is sliced.
-    arr : ndarray
+    arr : ndarray (Ni..., M, Nk...)
         Input array.
     args : any
         Additional arguments to `func1d`.
@@ -46,11 +289,11 @@ def apply_along_axis(func1d, axis, arr, *args, **kwargs):
 
     Returns
     -------
-    apply_along_axis : ndarray
-        The output array. The shape of `outarr` is identical to the shape of
+    out : ndarray  (Ni..., Nj..., Nk...)
+        The output array. The shape of `out` is identical to the shape of
         `arr`, except along the `axis` dimension. This axis is removed, and
         replaced with new dimensions equal to the shape of the return value
-        of `func1d`. So if `func1d` returns a scalar `outarr` will have one
+        of `func1d`. So if `func1d` returns a scalar `out` will have one
         fewer dimensions than `arr`.
 
     See Also
@@ -85,11 +328,9 @@ def apply_along_axis(func1d, axis, arr, *args, **kwargs):
     array([[[1, 0, 0],
             [0, 2, 0],
             [0, 0, 3]],
-
            [[4, 0, 0],
             [0, 5, 0],
             [0, 0, 6]],
-
            [[7, 0, 0],
             [0, 8, 0],
             [0, 0, 9]]])
@@ -281,7 +522,7 @@ def expand_dims(a, axis):
     >>> y.shape
     (1, 2)
 
-    >>> y = np.expand_dims(x, axis=1)  # Equivalent to x[:,newaxis]
+    >>> y = np.expand_dims(x, axis=1)  # Equivalent to x[:,np.newaxis]
     >>> y
     array([[1],
            [2]])
@@ -332,7 +573,7 @@ def column_stack(tup):
 
     See Also
     --------
-    hstack, vstack, concatenate
+    stack, hstack, vstack, concatenate
 
     Examples
     --------
@@ -356,25 +597,26 @@ def dstack(tup):
     """
     Stack arrays in sequence depth wise (along third axis).
 
-    Takes a sequence of arrays and stack them along the third axis
-    to make a single array. Rebuilds arrays divided by `dsplit`.
-    This is a simple way to stack 2D arrays (images) into a single
-    3D array for processing.
+    This is equivalent to concatenation along the third axis after 2-D arrays
+    of shape `(M,N)` have been reshaped to `(M,N,1)` and 1-D arrays of shape
+    `(N,)` have been reshaped to `(1,N,1)`. Rebuilds arrays divided by
+    `dsplit`.
 
-    This function continues to be supported for backward compatibility, but
-    you should prefer ``np.concatenate`` or ``np.stack``. The ``np.stack``
-    function was added in NumPy 1.10.
+    This function makes most sense for arrays with up to 3 dimensions. For
+    instance, for pixel-data with a height (first axis), width (second axis),
+    and r/g/b channels (third axis). The functions `concatenate`, `stack` and
+    `block` provide more general stacking and concatenation operations.
 
     Parameters
     ----------
     tup : sequence of arrays
-        Arrays to stack. All of them must have the same shape along all
-        but the third axis.
+        The arrays must have the same shape along all but the third axis.
+        1-D or 2-D arrays must have the same shape.
 
     Returns
     -------
     stacked : ndarray
-        The array formed by stacking the given arrays.
+        The array formed by stacking the given arrays, will be at least 3-D.
 
     See Also
     --------
@@ -383,11 +625,6 @@ def dstack(tup):
     hstack : Stack along second axis.
     concatenate : Join a sequence of arrays along an existing axis.
     dsplit : Split array along third axis.
-
-    Notes
-    -----
-    Equivalent to ``np.concatenate(tup, axis=2)`` if `tup` contains arrays that
-    are at least 3-dimensional.
 
     Examples
     --------
@@ -423,7 +660,9 @@ def array_split(ary, indices_or_sections, axis=0):
     Please refer to the ``split`` documentation.  The only difference
     between these functions is that ``array_split`` allows
     `indices_or_sections` to be an integer that does *not* equally
-    divide the axis.
+    divide the axis. For an array of length l that should be split
+    into n sections, it returns l % n sub-arrays of size l//n + 1
+    and the rest of size l//n.
 
     See Also
     --------
@@ -434,6 +673,10 @@ def array_split(ary, indices_or_sections, axis=0):
     >>> x = np.arange(8.0)
     >>> np.array_split(x, 3)
         [array([ 0.,  1.,  2.]), array([ 3.,  4.,  5.]), array([ 6.,  7.])]
+
+    >>> x = np.arange(7.0)
+    >>> np.array_split(x, 3)
+        [array([ 0.,  1.,  2.]), array([ 3.,  4.]), array([ 5.,  6.])]
 
     """
     try:

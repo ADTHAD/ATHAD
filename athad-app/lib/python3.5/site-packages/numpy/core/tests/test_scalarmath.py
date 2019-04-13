@@ -4,14 +4,15 @@ import sys
 import warnings
 import itertools
 import operator
+import platform
+import pytest
 
 import numpy as np
-from numpy.testing.utils import _gen_alignment_data
 from numpy.testing import (
-    TestCase, run_module_suite, assert_, assert_equal, assert_raises,
-    assert_almost_equal, assert_allclose, assert_array_equal, IS_PYPY,
-    suppress_warnings
-)
+    assert_, assert_equal, assert_raises, assert_almost_equal, assert_allclose,
+    assert_array_equal, IS_PYPY, suppress_warnings, _gen_alignment_data,
+    assert_warns
+    )
 
 types = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc, np.uintc,
          np.int_, np.uint, np.longlong, np.ulonglong,
@@ -19,17 +20,18 @@ types = [np.bool_, np.byte, np.ubyte, np.short, np.ushort, np.intc, np.uintc,
          np.cdouble, np.clongdouble]
 
 floating_types = np.floating.__subclasses__()
+complex_floating_types = np.complexfloating.__subclasses__()
 
 
 # This compares scalarmath against ufuncs.
 
-class TestTypes(TestCase):
-    def test_types(self, level=1):
+class TestTypes(object):
+    def test_types(self):
         for atype in types:
             a = atype(1)
             assert_(a == 1, "error with %r: got %r" % (atype, a))
 
-    def test_type_add(self, level=1):
+    def test_type_add(self):
         # list of types
         for k, atype in enumerate(types):
             a_scalar = atype(3)
@@ -49,7 +51,7 @@ class TestTypes(TestCase):
                            "error with types (%d/'%c' + %d/'%c')" %
                             (k, np.dtype(atype).char, l, np.dtype(btype).char))
 
-    def test_type_create(self, level=1):
+    def test_type_create(self):
         for k, atype in enumerate(types):
             a = np.array([1, 2, 3], atype)
             b = atype([1, 2, 3])
@@ -62,7 +64,7 @@ class TestTypes(TestCase):
             np.add(1, 1)
 
 
-class TestBaseMath(TestCase):
+class TestBaseMath(object):
     def test_blocked(self):
         # test alignments offsets for simd instructions
         # alignments for vz + 2 * (vs - 1) + 1
@@ -108,7 +110,7 @@ class TestBaseMath(TestCase):
         np.add(d, np.ones_like(d))
 
 
-class TestPower(TestCase):
+class TestPower(object):
     def test_small_types(self):
         for t in [np.int8, np.int16, np.float16]:
             a = t(3)
@@ -127,7 +129,7 @@ class TestPower(TestCase):
 
     def test_integers_to_negative_integer_power(self):
         # Note that the combination of uint64 with a signed integer
-        # has common type np.float. The other combinations should all
+        # has common type np.float64. The other combinations should all
         # raise a ValueError for integer ** negative integer.
         exp = [np.array(-1, dt)[()] for dt in 'bhilq']
 
@@ -200,7 +202,7 @@ def _signs(dt):
         return (+1, -1)
 
 
-class TestModulus(TestCase):
+class TestModulus(object):
 
     def test_modulus_basic(self):
         dt = np.typecodes['AllInteger'] + np.typecodes['Float']
@@ -292,7 +294,7 @@ class TestModulus(TestCase):
                 assert_(np.isnan(rem), 'dt: %s' % dt)
 
 
-class TestComplexDivision(TestCase):
+class TestComplexDivision(object):
     def test_zero_division(self):
         with np.errstate(all="ignore"):
             for t in [np.complex64, np.complex128]:
@@ -364,7 +366,7 @@ class TestComplexDivision(TestCase):
                     assert_equal(result.imag, ex[1])
 
 
-class TestConversion(TestCase):
+class TestConversion(object):
     def test_int_from_long(self):
         l = [1e6, 1e12, 1e18, -1e6, -1e12, -1e18]
         li = [10**6, 10**12, 10**18, -10**6, -10**12, -10**18]
@@ -398,12 +400,44 @@ class TestConversion(TestCase):
         for code in 'lLqQ':
             assert_raises(OverflowError, overflow_error_func, code)
 
-    def test_longdouble_int(self):
+    def test_int_from_infinite_longdouble(self):
         # gh-627
         x = np.longdouble(np.inf)
+        assert_raises(OverflowError, int, x)
+        with suppress_warnings() as sup:
+            sup.record(np.ComplexWarning)
+            x = np.clongdouble(np.inf)
+            assert_raises(OverflowError, int, x)
+            assert_equal(len(sup.log), 1)
+
+    @pytest.mark.skipif(not IS_PYPY, reason="Test is PyPy only (gh-9972)")
+    def test_int_from_infinite_longdouble___int__(self):
+        x = np.longdouble(np.inf)
         assert_raises(OverflowError, x.__int__)
-        x = np.clongdouble(np.inf)
-        assert_raises(OverflowError, x.__int__)
+        with suppress_warnings() as sup:
+            sup.record(np.ComplexWarning)
+            x = np.clongdouble(np.inf)
+            assert_raises(OverflowError, x.__int__)
+            assert_equal(len(sup.log), 1)
+
+    @pytest.mark.skipif(np.finfo(np.double) == np.finfo(np.longdouble),
+                        reason="long double is same as double")
+    @pytest.mark.skipif(platform.machine().startswith("ppc64"),
+                        reason="IBM double double")
+    def test_int_from_huge_longdouble(self):
+        # Produce a longdouble that would overflow a double,
+        # use exponent that avoids bug in Darwin pow function.
+        exp = np.finfo(np.double).maxexp - 1
+        huge_ld = 2 * 1234 * np.longdouble(2) ** exp
+        huge_i = 2 * 1234 * 2 ** exp
+        assert_(huge_ld != np.inf)
+        assert_equal(int(huge_ld), huge_i)
+
+    def test_int_from_longdouble(self):
+        x = np.longdouble(1.5)
+        assert_equal(int(x), 1)
+        x = np.longdouble(-10.5)
+        assert_equal(int(x), -10)
 
     def test_numpy_scalar_relational_operators(self):
         # All integer
@@ -468,7 +502,7 @@ class TestConversion(TestCase):
         assert_(np.equal(np.datetime64('NaT'), None))
 
 
-#class TestRepr(TestCase):
+#class TestRepr(object):
 #    def test_repr(self):
 #        for t in types:
 #            val = t(1197346475.0137341)
@@ -507,12 +541,12 @@ class TestRepr(object):
         # long double test cannot work, because eval goes through a python
         # float
         for t in [np.float32, np.float64]:
-            yield self._test_type_repr, t
+            self._test_type_repr(t)
 
 
 if not IS_PYPY:
     # sys.getsizeof() is not valid on PyPy
-    class TestSizeOf(TestCase):
+    class TestSizeOf(object):
 
         def test_equal_nbytes(self):
             for type in types:
@@ -524,22 +558,35 @@ if not IS_PYPY:
             assert_raises(TypeError, d.__sizeof__, "a")
 
 
-class TestMultiply(TestCase):
+class TestMultiply(object):
     def test_seq_repeat(self):
         # Test that basic sequences get repeated when multiplied with
         # numpy integers. And errors are raised when multiplied with others.
         # Some of this behaviour may be controversial and could be open for
         # change.
+        accepted_types = set(np.typecodes["AllInteger"])
+        deprecated_types = set('?')
+        forbidden_types = (
+            set(np.typecodes["All"]) - accepted_types - deprecated_types)
+        forbidden_types -= set('V')  # can't default-construct void scalars
+
         for seq_type in (list, tuple):
             seq = seq_type([1, 2, 3])
-            for numpy_type in np.typecodes["AllInteger"]:
+            for numpy_type in accepted_types:
                 i = np.dtype(numpy_type).type(2)
                 assert_equal(seq * i, seq * int(i))
                 assert_equal(i * seq, int(i) * seq)
 
-            for numpy_type in np.typecodes["All"].replace("V", ""):
-                if numpy_type in np.typecodes["AllInteger"]:
-                    continue
+            for numpy_type in deprecated_types:
+                i = np.dtype(numpy_type).type()
+                assert_equal(
+                    assert_warns(DeprecationWarning, operator.mul, seq, i),
+                    seq * int(i))
+                assert_equal(
+                    assert_warns(DeprecationWarning, operator.mul, i, seq),
+                    int(i) * seq)
+
+            for numpy_type in forbidden_types:
                 i = np.dtype(numpy_type).type()
                 assert_raises(TypeError, operator.mul, seq, i)
                 assert_raises(TypeError, operator.mul, i, seq)
@@ -562,7 +609,7 @@ class TestMultiply(TestCase):
             assert_array_equal(np.int_(3) * arr_like, np.full(3, 3))
 
 
-class TestNegative(TestCase):
+class TestNegative(object):
     def test_exceptions(self):
         a = np.ones((), dtype=np.bool_)[()]
         assert_raises(TypeError, operator.neg, a)
@@ -576,10 +623,13 @@ class TestNegative(TestCase):
                 assert_equal(operator.neg(a) + a, 0)
 
 
-class TestSubtract(TestCase):
+class TestSubtract(object):
+    def test_exceptions(self):
+        a = np.ones((), dtype=np.bool_)[()]
+        assert_raises(TypeError, operator.sub, a, a)
 
     def test_result(self):
-        types = np.typecodes['AllInteger'] + np.typecodes['AllFloat'] + '?'
+        types = np.typecodes['AllInteger'] + np.typecodes['AllFloat']
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
             for dt in types:
@@ -587,10 +637,9 @@ class TestSubtract(TestCase):
                 assert_equal(operator.sub(a, a), 0)
 
 
-class TestAbs(TestCase):
-
+class TestAbs(object):
     def _test_abs_func(self, absfunc):
-        for tp in floating_types:
+        for tp in floating_types + complex_floating_types:
             x = tp(-1.5)
             assert_equal(absfunc(x), 1.5)
             x = tp(0.0)
@@ -601,12 +650,17 @@ class TestAbs(TestCase):
             res = absfunc(x)
             assert_equal(res, 0.0)
 
+            x = tp(np.finfo(tp).max)
+            assert_equal(absfunc(x), x.real)
+
+            x = tp(np.finfo(tp).tiny)
+            assert_equal(absfunc(x), x.real)
+
+            x = tp(np.finfo(tp).min)
+            assert_equal(absfunc(x), -x.real)
+
     def test_builtin_abs(self):
         self._test_abs_func(abs)
 
     def test_numpy_abs(self):
         self._test_abs_func(np.abs)
-
-
-if __name__ == "__main__":
-    run_module_suite()

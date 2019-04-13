@@ -557,7 +557,7 @@ def info(object=None, maxwidth=76, output=sys.stdout, toplevel='numpy'):
                 if len(arglist) > 1:
                     arglist[1] = "("+arglist[1]
                     arguments = ", ".join(arglist[1:])
-        except:
+        except Exception:
             pass
 
         if len(name+arguments) > maxwidth:
@@ -689,7 +689,7 @@ def source(object, output=sys.stdout):
     try:
         print("In file: %s\n" % inspect.getsourcefile(object), file=output)
         print(inspect.getsource(object), file=output)
-    except:
+    except Exception:
         print("Not available for this object.", file=output)
 
 
@@ -707,7 +707,7 @@ def lookfor(what, module=None, import_modules=True, regenerate=False,
     """
     Do a keyword search on docstrings.
 
-    A list of of objects that matched the search is displayed,
+    A list of objects that matched the search is displayed,
     sorted by relevance. All given keywords need to be found in the
     docstring for it to be returned as a result, but the order does
     not matter.
@@ -1138,7 +1138,7 @@ def _median_nancheck(data, result, axis, out):
     """
     if data.size == 0:
         return result
-    data = np.rollaxis(data, axis, data.ndim)
+    data = np.moveaxis(data, axis, -1)
     n = np.isnan(data[..., -1])
     # masked NaN values are ok
     if np.ma.isMaskedArray(n):

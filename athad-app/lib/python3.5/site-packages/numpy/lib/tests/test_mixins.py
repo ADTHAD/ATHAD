@@ -5,8 +5,7 @@ import operator
 import sys
 
 import numpy as np
-from numpy.testing import (
-    TestCase, run_module_suite, assert_, assert_equal, assert_raises)
+from numpy.testing import assert_, assert_equal, assert_raises
 
 
 PY2 = sys.version_info.major < 3
@@ -99,7 +98,7 @@ _ALL_BINARY_OPERATORS = [
 ]
 
 
-class TestNDArrayOperatorsMixin(TestCase):
+class TestNDArrayOperatorsMixin(object):
 
     def test_array_like_add(self):
 
@@ -212,7 +211,3 @@ class TestNDArrayOperatorsMixin(TestCase):
             np.frexp(ArrayLike(2 ** -3)), expected)
         _assert_equal_type_and_value(
             np.frexp(ArrayLike(np.array(2 ** -3))), expected)
-
-
-if __name__ == "__main__":
-    run_module_suite()
