@@ -8,6 +8,20 @@
   <title>Heart disease prediction</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}" />
+  <style>
+    .button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 15px 32px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 
 <body id="bg-img">
@@ -84,7 +98,7 @@
         <label for="thal">thal(normal<3, fixed defect=6, reversable defect=7)</label> <input type="number" name="thal"
             id="thal">
             <br><br>
-            <input type="submit" value="Predict Heart Diease">
+            <input class="button" type="submit" value="Predict Heart Diease" />
       </form>
     </div>
 </body>
