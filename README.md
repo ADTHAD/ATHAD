@@ -1,26 +1,33 @@
 # ATHAD
 Advanced Tools For Healthcare and Diagnostics
+It is a tool developed for the convenience of clinicians for detecting various types of diseases especially subclinical illness.This web application deals with the prediction of potential sickness using machine learning techniques.The dataset used for this procedure are experimental datas.
 
+ 
 
 ## Run locally
 
-1. to start this up, start a new python 3 virtual environment:
+1. To start this up, clone the repository by the command given below :
 
 ```
-$ virtualenv -p python3 athad-app
+$ git clone https://github.com/ADTHAD/ATHAD.git
 ```
-2. Move to athad-app directory
+2. Next,move to ATHAD directory:
 ```
-cd athad-app
+cd ATHAD/
+```
+3. Make a virtual environment:
+```
+ $ virtualenv -p python3 athad-app
 ```
 
-3. Install all of the dependencies
+
+4. Install all of the dependencies
 
 ```
 $  pip install -r requirements.txt
 ```
 
-4. Run the app
+5. Run the app
 
 ```
 $  python3 app.py
