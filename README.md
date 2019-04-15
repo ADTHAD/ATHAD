@@ -2,7 +2,7 @@
 Advanced Tools For Healthcare and Diagnostics
 It is a tool developed for the convenience of clinicians for detecting various types of diseases especially subclinical illness.This web application deals with the prediction of potential sickness using machine learning techniques.The dataset used for this procedure are experimental datas.
 
-##Demo App
+## Demo App
 Link: https://athad.herokuapp.com/ 
 
 ## Run locally
