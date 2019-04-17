@@ -11,5 +11,7 @@ body#bg-img {
   background-image: url(/static/img/background.jpg);
   background-attachment: fixed;
   background-size: cover;
+  width: 100%;
+  height: auto;
 }
 
