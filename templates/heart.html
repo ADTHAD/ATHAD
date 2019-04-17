@@ -4,11 +4,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/static/img/logo.png" type="image/png" sizes="16x16">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Heart disease prediction</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <style>
+    div.third {
+      /*setting alpha = 0.6*/
+      background: rgba(46, 235, 203, 0.911);
+    }
+
     .button {
       background-color: #4CAF50;
       border: none;
@@ -21,17 +27,98 @@
       margin: 4px 2px;
       cursor: pointer;
     }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .navbar {
+      overflow: hidden;
+      background-color: #333;
+    }
+
+    .navbar a {
+      float: right;
+      font-size: 16px;
+      color: white;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+    }
+
+    .dropdown {
+      float: right;
+      overflow: hidden;
+    }
+
+    .dropdown .dropbtn {
+      font-size: 16px;
+      border: none;
+      outline: none;
+      color: white;
+      padding: 14px 16px;
+      background-color: inherit;
+      font-family: inherit;
+      margin: 0;
+    }
+
+    .navbar a:hover,
+    .dropdown:hover .dropbtn {
+      background-color: green;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #f9f9f9;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+      z-index: 1;
+    }
+
+    .dropdown-content a {
+      float: none;
+      color: black;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+      text-align: left;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #ddd;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
   </style>
 </head>
 
 <body id="bg-img">
+  <div class="navbar">
+    <a href="/" style="float: left;"><img src="/static/img/logo.png" style="width:31px;height:30px;"></a>
+    <a href="/">Home</a>
+    <a href="about.html">About</a>
+    <div class="dropdown">
+      <button class="dropbtn">Tools
+        <i class="fa fa-caret-down"></i>
+      </button>
+      <div class="dropdown-content">
+        <a href="heart.html">Heart Disease Prediction</a>
+        <a href="pneumonia.html">Pneumonia Prediction</a>
+        <a href="#">Diabetis Prediction</a>
+      </div>
+    </div>
+  </div>
   <h1 align="center">Heart disease prediction</h1>
-  <br><br>
-  <div class="container">
+  <div>
     {% if pred: %}
-    <p align="center" style="color:red;font-size: 20px"><b>Prediction: {{pred}}</b></p>
+    <p align="center" style="color:red;font-size: 20px;background-color: whitesmoke;background-blend-mode: multiply ">
+      <b>Prediction: {{pred}}</b>
+    </p>
     {% endif %}
-    <div class="jumbotron text-center" style="background-color: black;">
+    <div class="third">
       <form action="/get-user-data" method="POST">
 
         <br><br>
