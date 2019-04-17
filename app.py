@@ -6,9 +6,18 @@ import numpy as np
 
 app = Flask(__name__)
 
+@app.route("/heart.html", methods=['GET'])
+def heart():
+    return render_template("heart.html")
 @app.route("/", methods=['GET'])
 def index():
     return render_template("index.html") 
+@app.route("/pneumonia.html", methods=['GET'])
+def pneumonia():
+    return render_template("pneumonia.html")
+@app.route("/about.html", methods=['GET'])
+def about():
+    return render_template("about.html")
 
 @app.route("/scrape", methods=['GET']) 
 def scrape():
@@ -90,7 +99,7 @@ def predict_stuff():
         	result = 'The person has heart disease'
         
 
-        return render_template("index.html", pred=result) 
+        return render_template("heart.html", pred=result) 
 
 
 if __name__ == "__main__":
