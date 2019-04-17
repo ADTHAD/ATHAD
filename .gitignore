@@ -1,4 +1,6 @@
 athad-app/
+activate/
+.ipynb_checkpoints/
 
 *.pyc
 __pycache__/
