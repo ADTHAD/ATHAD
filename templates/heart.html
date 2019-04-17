@@ -13,6 +13,9 @@
     div.third {
       /*setting alpha = 0.6*/
       background: rgba(46, 235, 203, 0.911);
+      text-align: center;
+      font-weight: bold;
+      text-decoration-color: black;
     }
 
     .button {
@@ -123,68 +126,68 @@
 
         <br><br>
         <label for="age">Age(in years)</label>
-        <input type="number" name="age" id="age" style="color:black">
+        <input type="number" name="age" id="age" style="color:black;" placeholder="Ex: 62">
 
         <br><br>
 
         <label for="sex">Sex(1=male,0=female)</label>
-        <input type="number" name="sex" id="sex" style="color:black">
+        <input type="number" name="sex" id="sex" style="color:black" placeholder="Ex: 1">
 
         <br><br>
 
         <label for="cp">chest pain type(cp)</label>
-        <input type="number" name="cp" id="cp" style="color:black">
+        <input type="number" name="cp" id="cp" style="color:black" placeholder="Ex: 2">
 
         <br><br>
 
         <label for="trestbps">Resting blood pressure(trestbps in mm Hg)</label>
-        <input type="number" name="trestbps" id="trestbps" style="color:black">
+        <input type="number" name="trestbps" id="trestbps" style="color:black" placeholder="Ex: 150">
 
         <br><br>
 
         <label for="chol">Serum cholestoral(chol in mg/dl)</label>
-        <input type="number" name="chol" id="chol" style="color:black">
+        <input type="number" name="chol" id="chol" style="color:black" placeholder="Ex: 243">
 
         <br><br>
 
         <label for="fbs">Fasting blood sugar(if fbs >120mg/dl 1=true, 0=false)</label>
-        <input type="number" name="fbs" id="fbs" style="color:black">
+        <input type="number" name="fbs" id="fbs" style="color:black" placeholder="Ex: 1">
 
         <br><br>
 
         <label for="restecg">Resting electrocardiographic(restecg)</label>
-        <input type="number" name="restecg" id="restecg" style="color:black">
+        <input type="number" name="restecg" id="restecg" style="color:black" placeholder="Ex: 1">
 
         <br><br>
 
         <label for="thalach">Maximum heart rate achieved(thalach)</label>
-        <input type="number" name="thalach" id="thalach" style="color:black">
+        <input type="number" name="thalach" id="thalach" style="color:black" placeholder="Ex: 137">
 
         <br><br>
 
         <label for="exang">Exercise induced angina(exang 1=yes,0=no)</label>
-        <input type="number" name="exang" id="exang" style="color:black">
+        <input type="number" name="exang" id="exang" style="color:black" placeholder="Ex: 1">
 
         <br><br>
 
         <label for="oldpeak">ST depression induced by excercise relative to rest(oldpeak)</label>
-        <input type="number" placeholder="1.0" step="0.01" min="0" max="10" name="oldpeak" id="oldpeak"
+        <input type="number" placeholder="Ex: 1.0" step="0.01" min="0" max="10" name="oldpeak" id="oldpeak"
           style="color:black">
 
         <br> <br>
 
         <label for="slope">The slope of peak exercise ST segment(slope)</label>
-        <input type="number" name="slope" id="slope" style="color:black">
+        <input type="number" name="slope" id="slope" style="color:black" placeholder="Ex: 1">
 
         <br> <br>
 
         <label for="ca">Number of major vessels (0-3) colored by flourosopy(ca)</label>
-        <input type="number" name="ca" id="ca" style="color:black">
+        <input type="number" name="ca" id="ca" style="color:black" 0 placeholder="Ex: 0">
 
         <br> <br>
 
         <label for="thal">thal(normal<3, fixed defect=6, reversable defect=7)</label> <input type="number" name="thal"
-            font color:"black" id="thal" style="color:black">
+            font color:"black" id="thal" style="color:black" placeholder="Ex: 2">
             <br><br>
             <input class="button" type="submit" value="Predict Heart Disease" />
       </form>
