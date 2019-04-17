@@ -19,16 +19,6 @@ def pneumonia():
 def about():
     return render_template("about.html")
 
-@app.route("/scrape", methods=['GET']) 
-def scrape():
-    listings = mongo.db.listings
-    listings_data = scrape_craigslist.scrape()
-    listings.update(
-        {},
-        listings_data,
-        upsert=True
-    )
-    return redirect("http://localhost:5500/", code=302)
 
 @app.route('/get-user-data', methods=['POST'])
 def predict_stuff():
