@@ -71,6 +71,7 @@
         .dropdown:hover .dropdown-content {
             display: block;
         }
+        .show {display:block;}
     </style>
 </head>
 
@@ -81,10 +82,10 @@
         <a href="/">Home</a>
         <a href="about.html">About</a>
         <div class="dropdown">
-            <button class="dropbtn">Tools
+            <button onclick="myFunction()" class="dropbtn">Tools
                 <i class="fa fa-caret-down"></i>
             </button>
-            <div class="dropdown-content">
+            <div id="myDropdown" class="dropdown-content">
                 <a href="heart.html">Heart Disease Prediction</a>
                 <a href="pneumonia.html">Pneumonia Prediction</a>
                 <a href="#">Diabetes Prediction</a>
@@ -98,6 +99,8 @@
         detecting various types of diseases especially subclinical illness.This web application deals with the
         prediction of potential sickness using machine learning techniques.The dataset used for this procedure are
         experimental datas.</p>
+
+    <script src="{{url_for('static', filename='js/main.js')}}"></script>
 
 </body>
 
