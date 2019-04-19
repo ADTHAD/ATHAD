@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/static/img/logo.png" type="image/png" sizes="16x16">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Liver disease prediction</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <style>
+    div.third {
+      /*setting alpha = 0.6*/
+      background: rgba(46, 235, 203, 0.911);
+      text-align: center;
+      font-weight: bold;
+      text-decoration-color: black;
+    }
+
+    .button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 15px 32px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .navbar {
+      overflow: hidden;
+      background-color: #333;
+    }
+
+    .navbar a {
+      float: right;
+      font-size: 16px;
+      color: white;
+      text-align: center;
+      padding: 14px 16px;
+      text-decoration: none;
+    }
+
+    .dropdown {
+      float: right;
+      overflow: hidden;
+    }
+
+    .dropdown .dropbtn {
+      font-size: 16px;
+      border: none;
+      outline: none;
+      color: white;
+      padding: 14px 16px;
+      background-color: inherit;
+      font-family: inherit;
+      margin: 0;
+    }
+
+    .navbar a:hover,
+    .dropdown:hover .dropbtn {
+      background-color: green;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #f9f9f9;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+      z-index: 1;
+    }
+
+    .dropdown-content a {
+      float: none;
+      color: black;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+      text-align: left;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #ddd;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+  </style>
+</head>
+
+<body id="bg-img">
+  <div class="navbar">
+    <a href="/" style="float: left;"><img src="/static/img/logo.png" style="width:31px;height:30px;"></a>
+    <a href="/">Home</a>
+    <a href="about.html">About</a>
+    <div class="dropdown">
+      <button class="dropbtn">Tools
+        <i class="fa fa-caret-down"></i>
+      </button>
+      <div class="dropdown-content">
+        <a href="heart.html">Heart Disease Prediction</a>
+        <a href="pneumonia.html">Pneumonia Prediction</a>
+        <a href="liver.html">Liver Disease Prediction</a>
+        <a href="#">Diabetes Prediction</a>
+      </div>
+    </div>
+  </div>
+  <h1 align="center">Liver disease prediction</h1>
+  <div>
+    {% if pred: %}
+    <p align="center" style="color:red;font-size: 20px;background-color: whitesmoke;background-blend-mode: multiply ">
+      <b>Prediction: {{pred}}</b>
+    </p>
+    {% endif %}
+    <div class="third">
+      <form action="/liver-user-data" method="POST">
+
+        <br><br>
+        <label for="age">Age(in years)</label>
+        <input type="number" name="age" id="age" style="color:black;" placeholder="Ex: 62">
+
+        <br><br>
+
+        <label for="sex">Sex(1=male,2=female)</label>
+        <input type="number" name="sex" id="sex" style="color:black" placeholder="Ex: 1">
+
+        <br><br>
+
+        <label for="Total_Bilirubin">Total_Bilirubin(in mg/dl)</label>
+        <input type="number" name="Total_Bilirubin" id="Total_Bilirubin" style="color:black" placeholder="Ex: 2">
+
+        <br><br>
+
+        <label for="Direct_Bilirubin">Direct Bilirubin(in mg/dl)</label>
+        <input type="number" name="Direct_Bilirubin" id="Direct_Bilirubin" style="color:black" placeholder="Ex: 150">
+
+        <br><br>
+
+        <label for="Alkaline_Phosphotase">Alkaline Phosphotase(in IU/L)</label>
+        <input type="number" name="Alkaline_Phosphotase" id="Alkaline_Phosphotase" style="color:black" placeholder="Ex: 243">
+
+        <br><br>
+
+        <label for="Alamine_Aminotransferase">Alamine Aminotransferase(in IU/L)</label>
+        <input type="number" name="Alamine_Aminotransferase" id="Alamine_Aminotransferase" style="color:black" placeholder="Ex: 1">
+
+        <br><br>
+
+        <label for="Aspartate_Aminotransferase">Aspartate Aminotransferase</label>
+        <input type="number" name="Aspartate_Aminotransferase" id="Aspartate_Aminotransferase" style="color:black" placeholder="Ex: 1">
+
+        <br><br>
+
+        <label for="Total_Protiens">Total Protiens</label>
+        <input type="number" name="Total_Protiens" id="Total_Protiens" style="color:black" placeholder="Ex: 137">
+
+        <br><br>
+
+        <label for="Albumin">Albumin</label>
+        <input type="number" name="Albumin" id="Albumin" style="color:black" placeholder="Ex: 1">
+
+        <br><br>
+
+        <label for="Albumin_and_Globulin_Ratio">Albumin and Globulin Ratio</label>
+        <input type="number" placeholder="Ex: 1.0" name="Albumin_and_Globulin_Ratio" id="Albumin_and_Globulin_Ratio"
+          style="color:black">
+
+            <br><br>
+            <input class="button" type="submit" value="Predict Liver Disease" />
+      </form>
+    </div>
+</body>
+
+</html>
