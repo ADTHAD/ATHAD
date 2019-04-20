@@ -1,8 +1,6 @@
 from flask import Flask, render_template, jsonify, redirect, request
-import pandas as pd
-from sklearn.externals import joblib
+from heart import predict_stuff
 
-import numpy as np
 
 app = Flask(__name__)
 
@@ -15,81 +13,24 @@ def index():
 @app.route("/pneumonia.html", methods=['GET'])
 def pneumonia():
     return render_template("pneumonia.html")
+@app.route("/liver.html", methods=['GET'])
+def liver():
+    return render_template("liver.html")
 @app.route("/about.html", methods=['GET'])
 def about():
     return render_template("about.html")
 
 
-@app.route('/get-user-data', methods=['POST'])
-def predict_stuff():
-    if request.method == 'POST':
-        model_svm = joblib.load("models/heart_disease_models/heart_svm_model.pkl")
-        model_rfc = joblib.load("models/heart_disease_models/heart_rfc_model.pkl")
-        print('-----line 27--------')
-        
+@app.route('/heart-user-data', methods=['POST'])
+def heart_predict():
+    result=predict_stuff()
+    return render_template("heart.html", pred=result)
 
-        age = int(request.form.get('age'))
+@app.route('/liver-user-data', methods=['POST'])
+def liver_predict():
+    result=predict_liver_stuff()
+    return render_template("liver.html", liver_pred=result)
 
-        print('line 31')
-
-        sex = int(request.form.get('sex'))
-        cp = int(request.form.get('cp'))
-        trestbps = int(request.form.get('trestbps'))
-        chol = int(request.form.get('chol'))
-        fbs = int(request.form.get('fbs'))
-        restecg = int(request.form.get('restecg'))
-        thalach = int(request.form.get('thalach'))
-
-        exang = int(request.form.get('exang'))
-        oldpeak = float(request.form.get('oldpeak'))
-
-        slope = int(request.form.get('slope'))
-
-        ca = int(request.form.get('ca'))
-
-        thal = int(request.form.get('thal'))
-        target= 0
-        
-        data = [
-            age,   
-            sex,      
-            cp,      
-            trestbps,      
-            chol,      
-            fbs,   
-            restecg,   
-            thalach,  
-            exang,      
-            oldpeak,
-            slope,
-            ca,
-            thal,
-            target
-        ]
-        df = pd.read_csv("models/heart_disease_models/heart.csv")
-        #Insert the data to csv for preprocessing
-        df.loc[303] = [i for i in data]
-        a=pd.get_dummies(df['cp'],prefix ="cp")
-        b=pd.get_dummies(df['thal'],prefix ="thal")
-        c=pd.get_dummies(df['slope'],prefix ="slope")
-        frames=[df,a,b,c]
-        
-        df=pd.concat(frames,axis=1)
-        df=df.drop(['cp','thal','slope'],axis=1)
-        x_data =df.drop(['target'],axis=1)
-        
-        x = (x_data - np.min(x_data)) / (np.max(x_data) - np.min(x_data)).values
-        data_to_predict = x.loc[303].tolist()
-        
-        predicted_result = model_svm.predict(data_to_predict)
-        #print(predicted_result)
-        if predicted_result[0]==0:
-        	result='The person do not have heart disease'
-        else:
-        	result = 'The person has heart disease'
-        
-
-        return render_template("heart.html", pred=result) 
 
 
 if __name__ == "__main__":
