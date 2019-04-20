@@ -108,17 +108,17 @@
       </button>
       <div class="dropdown-content">
         <a href="heart.html">Heart Disease Prediction</a>
-        <a href="pneumonia.html">Pneumonia Prediction</a>
         <a href="liver.html">Liver Disease Prediction</a>
+        <a href="pneumonia.html">Pneumonia Prediction</a>
         <a href="#">Diabetes Prediction</a>
       </div>
     </div>
   </div>
   <h1 align="center">Liver disease prediction</h1>
   <div>
-    {% if pred: %}
+    {% if liver_pred: %}
     <p align="center" style="color:red;font-size: 20px;background-color: whitesmoke;background-blend-mode: multiply ">
-      <b>Prediction: {{pred}}</b>
+      <b>Prediction: {{liver_pred}}</b>
     </p>
     {% endif %}
     <div class="third">
