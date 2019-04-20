@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="/static/img/logo.png" type="image/png" sizes="16x16">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Heart disease prediction</title>
+  <title>Diabetes Prediction</title>
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <style>
@@ -17,7 +17,6 @@
       font-weight: bold;
       text-decoration-color: black;
     }
-
     .button {
       background-color: #4CAF50;
       border: none;
@@ -30,16 +29,13 @@
       margin: 4px 2px;
       cursor: pointer;
     }
-
     body {
       font-family: Arial, Helvetica, sans-serif;
     }
-
     .navbar {
       overflow: hidden;
       background-color: #333;
     }
-
     .navbar a {
       float: right;
       font-size: 16px;
@@ -48,12 +44,10 @@
       padding: 14px 16px;
       text-decoration: none;
     }
-
     .dropdown {
       float: right;
       overflow: hidden;
     }
-
     .dropdown .dropbtn {
       font-size: 16px;
       border: none;
@@ -64,12 +58,10 @@
       font-family: inherit;
       margin: 0;
     }
-
     .navbar a:hover,
     .dropdown:hover .dropbtn {
       background-color: green;
     }
-
     .dropdown-content {
       display: none;
       position: absolute;
@@ -78,7 +70,6 @@
       box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
       z-index: 1;
     }
-
     .dropdown-content a {
       float: none;
       color: black;
@@ -87,11 +78,9 @@
       display: block;
       text-align: left;
     }
-
     .dropdown-content a:hover {
       background-color: #ddd;
     }
-
     .dropdown:hover .dropdown-content {
       display: block;
     }
@@ -111,86 +100,63 @@
         <a href="heart.html">Heart Disease Prediction</a>
         <a href="liver.html">Liver Disease Prediction</a>
         <a href="pneumonia.html">Pneumonia Prediction</a>
-        <a href="diabetes.html">Diabetes Prediction</a>
+        <a href="#">Diabetes Prediction</a>
       </div>
     </div>
   </div>
-  <h1 align="center">Heart disease prediction</h1>
+  <h1 align="center">Diabetes prediction</h1>
   <div>
-    {% if pred: %}
+    {% if diabetes_pred: %}
     <p align="center" style="color:red;font-size: 20px;background-color: whitesmoke;background-blend-mode: multiply ">
-      <b>Prediction: {{pred}}</b>
+      <b>Prediction: {{diabetes_pred}}</b>
+      <b>Accuracy: {{test_accuracy}}</b>
     </p>
     {% endif %}
     <div class="third">
-      <form action="/heart-user-data" method="POST">
+      <form action="/diabetes-user-data" method="POST">
 
         <br><br>
-        <label for="age">Age(in years)</label>
-        <input type="number" name="age" id="age" style="color:black;" placeholder="Ex: 62">
-
-        <br><br>
-
-        <label for="sex">Sex(1=male,0=female)</label>
-        <input type="number" name="sex" id="sex" style="color:black" placeholder="Ex: 1">
+        <label for="Pregnancies">Number of Pregnancies</label>
+        <input type="number" name="Number of Pregnancies" id="pg" style="color:black;" placeholder="Ex: 1">
 
         <br><br>
 
-        <label for="cp">chest pain type(cp)</label>
-        <input type="number" name="cp" id="cp" style="color:black" placeholder="Ex: 2">
+        <label for="Glucose">Plasma glucose concentration a 2 hours in an oral glucose tolerance test</label>
+        <input type="number" name="Glucose Content" id="Glucose" style="color:black" placeholder="Ex: 85">
 
         <br><br>
 
-        <label for="trestbps">Resting blood pressure(trestbps in mm Hg)</label>
-        <input type="number" name="trestbps" id="trestbps" style="color:black" placeholder="Ex: 150">
+        <label for="BloodPressure">Diastolic blood pressure (mm Hg)</label>
+        <input type="number" name="Diastolic blood pressure (mm Hg)" id="BloodPressure" style="color:black" placeholder="Ex: 66">
 
         <br><br>
 
-        <label for="chol">Serum cholestoral(chol in mg/dl)</label>
-        <input type="number" name="chol" id="chol" style="color:black" placeholder="Ex: 243">
+        <label for="SkinThickness">Triceps skin fold thickness (mm)</label>
+        <input type="number" name="Skin Fold thickness" id="SkinThickness" style="color:black" placeholder="Ex: 150">
 
         <br><br>
 
-        <label for="fbs">Fasting blood sugar(if fbs >120mg/dl 1=true, 0=false)</label>
-        <input type="number" name="fbs" id="fbs" style="color:black" placeholder="Ex: 1">
+        <label for="Insulin">2-Hour serum insulin (mu U/ml)</label>
+        <input type="number" name="Insulin" id="Insulin" style="color:black" placeholder="Ex: 243">
 
+       
         <br><br>
 
-        <label for="restecg">Resting electrocardiographic(restecg)</label>
-        <input type="number" name="restecg" id="restecg" style="color:black" placeholder="Ex: 1">
-
-        <br><br>
-
-        <label for="thalach">Maximum heart rate achieved(thalach)</label>
-        <input type="number" name="thalach" id="thalach" style="color:black" placeholder="Ex: 137">
-
-        <br><br>
-
-        <label for="exang">Exercise induced angina(exang 1=yes,0=no)</label>
-        <input type="number" name="exang" id="exang" style="color:black" placeholder="Ex: 1">
-
-        <br><br>
-
-        <label for="oldpeak">ST depression induced by excercise relative to rest(oldpeak)</label>
-        <input type="number" placeholder="Ex: 1.0" step="0.01" min="0" max="10" name="oldpeak" id="oldpeak"
+        <label for="BMI">Body mass index (weight in kg/(height in m)^2)</label>
+        <input type="number" placeholder="Ex: 33.7" step="0.0001" name="BMI" id="BMI"
           style="color:black">
+        <br><br>
 
-        <br> <br>
+        <label for="DiabetesPedigreeFunction">Diabetes pedigree function</label>
+        <input type="number" placeholder="Ex: 0.5" step="0.0001" name="DiabetesPedigreeFunction" id="DiabetesPedigreeFunction"
+          style="color:black">
+        <br><br>
 
-        <label for="slope">The slope of peak exercise ST segment(slope)</label>
-        <input type="number" name="slope" id="slope" style="color:black" placeholder="Ex: 1">
+        <label for="Age"> Age (years)</label>
+        <input type="number" name="Age" id="Age" style="color:black" placeholder="Ex: 1">
 
-        <br> <br>
-
-        <label for="ca">Number of major vessels (0-3) colored by flourosopy(ca)</label>
-        <input type="number" name="ca" id="ca" style="color:black" 0 placeholder="Ex: 0">
-
-        <br> <br>
-
-        <label for="thal">thal(normal<3, fixed defect=6, reversable defect=7)</label> <input type="number" name="thal"
-            font color:"black" id="thal" style="color:black" placeholder="Ex: 2">
-            <br><br>
-            <input class="button" type="submit" value="Predict Heart Disease" />
+        <br><br>
+            <input class="button" type="submit" value="Predict Diabetes" />
       </form>
     </div>
 </body>
