@@ -13,7 +13,7 @@ import seaborn as sns
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 
-df = pd.read_csv("heart.csv")
+df = pd.read_csv('heart.csv')
 df.head()
 
 a = pd.get_dummies(df['cp'], prefix = "cp")
