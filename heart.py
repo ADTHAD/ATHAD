@@ -44,8 +44,10 @@ def predict_stuff():
             target
         ]
         df = pd.read_csv("models/heart_disease_models/heart.csv")
+        lastindex=df.shape[0]+1
+
         #Insert the data to csv for preprocessing
-        df.loc[303] = [i for i in data]
+        df.loc[lastindex] = [i for i in data]
         a=pd.get_dummies(df['cp'],prefix ="cp")
         b=pd.get_dummies(df['thal'],prefix ="thal")
         c=pd.get_dummies(df['slope'],prefix ="slope")
@@ -56,7 +58,7 @@ def predict_stuff():
         x_data =df.drop(['target'],axis=1)
         
         x = (x_data - np.min(x_data)) / (np.max(x_data) - np.min(x_data)).values
-        data_to_predict = x.loc[303].tolist()
+        data_to_predict = x.loc[lastindex].tolist()
         #print(data_to_predict)
         predicted_result = model_svm.predict([data_to_predict])
         #print(predicted_result)
