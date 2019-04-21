@@ -34,8 +34,12 @@ def liver_predict():
         ]
         liver_df = pd.read_csv('models/Liver_prediction_model/indian_liver_patient.csv')
         liver_df.loc[582] = [i for i in data]
+        gender = {'Male': 1,'Female': 2} 
+        liver_df.Gender = [gender[item] for item in liver_df.Gender] 
+        X = liver_df.drop('Dataset', axis=1)
+        X= (X - np.min(X)) / (np.max(X) - np.min(X)).values
         liver_df=liver_df.drop('Dataset', axis=1)
-        finX = liver_df[['Total_Protiens','Albumin', 'Gender']]
+        finX = X[['Total_Protiens','Albumin', 'Gender']]
         data_to_predict = finX.loc[582].tolist()
         predicted_result = model_logreg.predict([data_to_predict])     
 
