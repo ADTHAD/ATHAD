@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify, redirect, request
 from heart import predict_stuff
+from liver import liver_predict
 from diabetes import predict_diabetes_stuff
 
 
