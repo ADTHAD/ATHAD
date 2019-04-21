@@ -17,6 +17,7 @@
       font-weight: bold;
       text-decoration-color: black;
     }
+
     .button {
       background-color: #4CAF50;
       border: none;
@@ -29,13 +30,16 @@
       margin: 4px 2px;
       cursor: pointer;
     }
+
     body {
       font-family: Arial, Helvetica, sans-serif;
     }
+
     .navbar {
       overflow: hidden;
       background-color: #333;
     }
+
     .navbar a {
       float: right;
       font-size: 16px;
@@ -44,10 +48,12 @@
       padding: 14px 16px;
       text-decoration: none;
     }
+
     .dropdown {
       float: right;
       overflow: hidden;
     }
+
     .dropdown .dropbtn {
       font-size: 16px;
       border: none;
@@ -58,10 +64,12 @@
       font-family: inherit;
       margin: 0;
     }
+
     .navbar a:hover,
     .dropdown:hover .dropbtn {
       background-color: green;
     }
+
     .dropdown-content {
       display: none;
       position: absolute;
@@ -70,6 +78,7 @@
       box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
       z-index: 1;
     }
+
     .dropdown-content a {
       float: none;
       color: black;
@@ -78,9 +87,11 @@
       display: block;
       text-align: left;
     }
+
     .dropdown-content a:hover {
       background-color: #ddd;
     }
+
     .dropdown:hover .dropdown-content {
       display: block;
     }
@@ -109,7 +120,7 @@
     {% if diabetes_pred: %}
     <p align="center" style="color:red;font-size: 20px;background-color: whitesmoke;background-blend-mode: multiply ">
       <b>Prediction: {{diabetes_pred}}</b>
-      <b>Accuracy: {{test_accuracy}}</b>
+
     </p>
     {% endif %}
     <div class="third">
@@ -117,46 +128,45 @@
 
         <br><br>
         <label for="Pregnancies">Number of Pregnancies</label>
-        <input type="number" name="Number of Pregnancies" id="pg" style="color:black;" placeholder="Ex: 1">
+        <input type="number" name="Pregnancies" id="Pregnancies" style="color:black;" placeholder="Ex: 1">
 
         <br><br>
 
         <label for="Glucose">Plasma glucose concentration a 2 hours in an oral glucose tolerance test</label>
-        <input type="number" name="Glucose Content" id="Glucose" style="color:black" placeholder="Ex: 85">
+        <input type="number" name="Glucose" id="Glucose" style="color:black" placeholder="Ex: 85">
 
         <br><br>
 
         <label for="BloodPressure">Diastolic blood pressure (mm Hg)</label>
-        <input type="number" name="Diastolic blood pressure (mm Hg)" id="BloodPressure" style="color:black" placeholder="Ex: 66">
+        <input type="number" name="BloodPressure" id="BloodPressure" style="color:black" placeholder="Ex: 66">
 
         <br><br>
 
         <label for="SkinThickness">Triceps skin fold thickness (mm)</label>
-        <input type="number" name="Skin Fold thickness" id="SkinThickness" style="color:black" placeholder="Ex: 150">
+        <input type="number" name="SkinThickness" id="SkinThickness" style="color:black" placeholder="Ex: 150">
 
         <br><br>
 
         <label for="Insulin">2-Hour serum insulin (mu U/ml)</label>
         <input type="number" name="Insulin" id="Insulin" style="color:black" placeholder="Ex: 243">
 
-       
+
         <br><br>
 
         <label for="BMI">Body mass index (weight in kg/(height in m)^2)</label>
-        <input type="number" placeholder="Ex: 33.7" step="0.0001" name="BMI" id="BMI"
-          style="color:black">
+        <input type="number" placeholder="Ex: 33.7" step="0.0001" name="BMI" id="BMI" style="color:black">
         <br><br>
 
         <label for="DiabetesPedigreeFunction">Diabetes pedigree function</label>
-        <input type="number" placeholder="Ex: 0.5" step="0.0001" name="DiabetesPedigreeFunction" id="DiabetesPedigreeFunction"
-          style="color:black">
+        <input type="number" placeholder="Ex: 0.5" step="0.0001" name="DiabetesPedigreeFunction"
+          id="DiabetesPedigreeFunction" style="color:black">
         <br><br>
 
         <label for="Age"> Age (years)</label>
         <input type="number" name="Age" id="Age" style="color:black" placeholder="Ex: 1">
 
         <br><br>
-            <input class="button" type="submit" value="Predict Diabetes" />
+        <input class="button" type="submit" value="Predict Diabetes" />
       </form>
     </div>
 </body>
