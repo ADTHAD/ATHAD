@@ -32,17 +32,18 @@ def predict_diabetes_stuff():
         DiabetesPedigreeFunction,
         Age,
         Outcome]
-
+       
         df = pd.read_csv('models/diabetes_predictor_models/diabetes.csv')
-        df.loc[769] = [i for i in diabetes_data]
+        lastindex=df.shape[0]+1
+        df.loc[lastindex] = [i for i in diabetes_data]
 
         y = df.Outcome.values
         x_data = df.drop(['Outcome'], axis = 1)
         x = (x_data - np.min(x_data)) / (np.max(x_data) - np.min(x_data)).values
-        #x_train, x_test, y_train, y_test = train_test_split(x,y,test_size = 0.2,random_state=0)
+        x_train, x_test, y_train, y_test = train_test_split(x,y,test_size = 0.2,random_state=0)
         ##print(x.loc[1].values)
 
-        data_to_predict = x.loc[0].tolist()
+        data_to_predict = x.loc[lastindex].tolist()
         print(data_to_predict)
         predicted_result = model_knn.predict([data_to_predict])
         print(predicted_result)
@@ -51,17 +52,8 @@ def predict_diabetes_stuff():
         else:
         	result = 'The person has diabetes'
 
-        training_accuracy = []
-        test_accuracy = []
-        # try n_neighbors from 1 to 10
-        """
-        neighbors_settings = range(1, 11)
-        for n_neighbors in neighbors_settings:
-        	knn = KNeighborsClassifier(n_neighbors=n_neighbors)
-        	knn.fit(x_train, y_train)
-        	training_accuracy.append(knn.score(x_train, y_train))
-        	test_accuracy.append(knn.score(data_to_predict, predicted_result))
-        """
-        return result
+        test_accuracy=model_knn.score([data_to_predict],predicted_result)
+        
+        return [result,test_accuracy]
 
 		  
