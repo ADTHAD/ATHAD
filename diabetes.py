@@ -49,7 +49,7 @@ def predict_diabetes_stuff():
         if predicted_result[0]==0:
         	result='The person does not have diabetes'
         else:
-        	result = 'The person has diabetes'
+        	result = 'The person have diabetes'
 
         training_accuracy = []
         test_accuracy = []
