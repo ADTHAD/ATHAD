@@ -38,7 +38,7 @@ def liver_predict():
 @app.route('/diabetes-user-data', methods=['POST'])
 def diabetes_predict():
     result=predict_diabetes_stuff()
-    return render_template("diabetes.html", diabetes_pred=result, test_accuracy=test_accuracy)
+    return render_template("diabetes.html", diabetes_pred=result)
 
 
 
