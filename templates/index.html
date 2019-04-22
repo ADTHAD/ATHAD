@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
         body {
+            background-color: black;
             font-family: Arial, Helvetica, sans-serif;
         }
 
@@ -72,6 +73,33 @@
             display: block;
         }
         .show {display:block;}
+        .btext{
+            color: #f9f3f4;
+            position: absolute;
+            text-align: center;
+            top: 40%;
+            width: 100%;
+            line-height: 0.4em;
+        }
+
+        h1{
+            font-size: 50px;
+        }
+
+        .btn{
+            color: #fff;
+            text-decoration: none;
+            border: #ccc 1px solid;
+            padding: 10px 15px;
+            border-radius: 8px;
+            line-height: 4em;
+        }
+
+        .btn:hover{
+            color: #b19295;
+            border: #fff 1px solid;
+        }
+        
     </style>
 </head>
 
@@ -93,13 +121,12 @@
             </div>
         </div>
     </div>
-    <div align="center"><img src="/static/img/logo4.png" style="max-width:100%;height:auto;"></div>
-    <br></br>
-    <h3>Advanced Tools For Healthcare and Diagnostics</h3>
-    <p>Advanced Tools For Healthcare and Diagnostics It is a tool developed for the convenience of clinicians for
-        detecting various types of diseases especially subclinical illness.This web application deals with the
-        prediction of potential sickness using machine learning techniques.The dataset used for this procedure are
-        experimental datas.</p>
+    <div class="btext" >
+            <h1>ATHAD</h1>
+            <p>Advanced Tools for Healthcare & Diagnostics</p>
+            <a href="heart.html" class="btn">Get Started</a>
+    </div>
+    
 </body>
 
 </html>
