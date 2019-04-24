@@ -44,9 +44,9 @@ def predict_diabetes_stuff():
         ##print(x.loc[1].values)
 
         data_to_predict = x.loc[lastindex].tolist()
-        print(data_to_predict)
+        #print(data_to_predict)
         predicted_result = model_knn.predict([data_to_predict])
-        print(predicted_result)
+        #print(predicted_result)
         if predicted_result[0]==0:
         	result='The person does not have diabetes'
         else:

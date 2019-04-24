@@ -1,8 +1,9 @@
 from sklearn.externals import joblib
 import pandas as pd
 import numpy as np
+from flask import request
 
-def liver_predict():
+def liver_prediction():
     if request.method == 'POST':
         model_logreg = joblib.load("models/Liver_prediction_model/logreg.pkl")
 
@@ -33,20 +34,19 @@ def liver_predict():
             target
         ]
         liver_df = pd.read_csv('models/Liver_prediction_model/indian_liver_patient.csv')
-        liver_df.loc[582] = [i for i in data]
         gender = {'Male': 1,'Female': 2} 
-        liver_df.Gender = [gender[item] for item in liver_df.Gender] 
+        liver_df.Gender = [gender[item] for item in liver_df.Gender]
+        liver_df.loc[582] = [i for i in data]
         X = liver_df.drop('Dataset', axis=1)
         X= (X - np.min(X)) / (np.max(X) - np.min(X)).values
-        liver_df=liver_df.drop('Dataset', axis=1)
         finX = X[['Total_Protiens','Albumin', 'Gender']]
         data_to_predict = finX.loc[582].tolist()
+        print(data_to_predict)
         predicted_result = model_logreg.predict([data_to_predict])     
 
         if predicted_result[0]==1:
         	result='The person have Liver disease'
         else:
         	result = 'The person does not have liver disease'
-        
         return result
         #return render_template("heart.html", pred=result) 
