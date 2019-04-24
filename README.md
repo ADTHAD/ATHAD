@@ -1,6 +1,6 @@
 # ATHAD
 Advanced Tools For Healthcare and Diagnostics
-It is a tool developed for the convenience of clinicians for detecting various types of diseases especially subclinical illness.This web application deals with the prediction of potential sickness using machine learning techniques.The dataset used for this procedure are experimental datas.
+Picture this-- your patient is unwell and he/she needs to get a  battery of tests done. He/She spends the next few days going to different labs and then few more days waiting for the results. Once again he/she is back to you for a diagnosis. Now, here is a tool that lets you predict all the diseases and gives the results instantly.It is a tool developed for the convenience of clinicians for detecting various types of diseases especially subclinical illness.This web application deals with the prediction of potential sickness using machine learning techniques.The dataset used for this procedure are experimental datas.
 
 ## Demo App
 Link: https://athad.herokuapp.com/ 
