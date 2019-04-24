@@ -50,7 +50,7 @@ def predict_diabetes_stuff():
         if predicted_result[0]==0:
         	result='The person does not have diabetes'
         else:
-        	result = 'The person has diabetes'
+        	result = 'The person have diabetes'
 
         test_accuracy=model_knn.score([data_to_predict],predicted_result)
         
