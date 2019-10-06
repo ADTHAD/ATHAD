@@ -2,7 +2,7 @@
 	<a href="https://circleci.com/gh/badges/shields/tree/master">
         <img src="https://img.shields.io/circleci/project/github/badges/shields/master" alt="build status"></a>
 </p>
-[![Generic badge](https://img.shields.io/badge/Contributors-3-<COLOR>.svg)](https://shields.io/
+
 ### Stable release version: ![version](https://img.shields.io/badge/version-1.2-blue)
 
 # ATHAD
