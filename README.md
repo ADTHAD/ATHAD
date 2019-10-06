@@ -5,7 +5,7 @@
         <img src="https://img.shields.io/github/contributors/badges/shields" /></a>
 </p>
 
-## Stable release version:![version](https://img.shields.io/badge/version-1.2-blue)
+### Stable release version: ![version](https://img.shields.io/badge/version-1.2-blue)
 
 # ATHAD
 Advanced Tools For Healthcare and Diagnostics.
