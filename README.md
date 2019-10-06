@@ -1,11 +1,11 @@
 <p align="center">
 	<a href="https://circleci.com/gh/badges/shields/tree/master">
         <img src="https://img.shields.io/circleci/project/github/badges/shields/master" alt="build status"></a>
-    <a href="https://github.com/badges/shields/graphs/contributors" alt="Contributors">
+    <a href="https://github.com/badges/shields/graphs/contributors" alt="Contributors" value=3>
         <img src="https://img.shields.io/github/contributors/badges/shields" /></a>
 </p>
 
-## stable release version: ![version](https://img.shields.io/badge/version-1.2.3-blue)
+## Stable release version:![version](https://img.shields.io/badge/version-1.2-blue)
 
 # ATHAD
 Advanced Tools For Healthcare and Diagnostics.
