@@ -1,8 +1,7 @@
 <p align="center">
 	<a href="https://circleci.com/gh/badges/shields/tree/master">
         <img src="https://img.shields.io/circleci/project/github/badges/shields/master" alt="build status"></a>
-    <a href="https://github.com/Gauravsahadev/ATHAD/graphs/contributors" alt="Contributors">
-        <img src="https://img.shields.io/github/contributors/badges/shields" /></a>
+    ![Generic badge](https://img.shields.io/badge/Contributors-3-<COLOR>.svg)](https://shields.io/
 </p>
 
 ### Stable release version: ![version](https://img.shields.io/badge/version-1.2-blue)
