@@ -1,7 +1,12 @@
 <p align="center">
 	<a href="https://circleci.com/gh/badges/shields/tree/master">
         <img src="https://img.shields.io/circleci/project/github/badges/shields/master" alt="build status"></a>
+    <a href="https://github.com/badges/shields/graphs/contributors" alt="Contributors">
+        <img src="https://img.shields.io/github/contributors/badges/shields" /></a>
 </p>
+
+##stable release version: ![version](https://img.shields.io/badge/version-1.2.3-blue)
+
 # ATHAD
 Advanced Tools For Healthcare and Diagnostics.
 Picture this-- your patient is unwell and he/she needs to get a  battery of tests done. He/She spends the next few days going to different labs and then few more days waiting for the results. Once again he/she is back to you for a diagnosis. Now, here is a tool that lets you predict all the diseases and gives the results instantly.It is a tool developed for the convenience of clinicians for detecting various types of diseases especially subclinical illness.This web application deals with the prediction of potential sickness using machine learning techniques.The dataset used for this procedure are experimental datas.
