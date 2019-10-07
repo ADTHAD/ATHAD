@@ -29,7 +29,10 @@ def about():
 @app.route('/heart-user-data', methods=['POST'])
 def heart_predict():
     result=predict_stuff()
-    return render_template("heart.html", pred=result)
+    if result:
+        return render_template("heart.html", pred=result)
+    else:
+        return render_template("error.html")
 
 @app.route('/liver-user-data', methods=['POST'])
 def liver_predict():
