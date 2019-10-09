@@ -1,6 +1,6 @@
 from flask import Flask, render_template, jsonify, redirect, request
 from heart import predict_stuff
-from liver import liver_prediction
+from liver import predict_liver_stuff as liver_prediction
 from diabetes import predict_diabetes_stuff
 
 
@@ -37,7 +37,10 @@ def heart_predict():
 @app.route('/liver-user-data', methods=['POST'])
 def liver_predict():
     result=liver_prediction()
-    return render_template("liver.html", liver_pred=result)
+    if result:
+        return render_template("liver.html", liver_pred=result)
+    else:
+        return render_template("liver_error.html")
 
 @app.route('/diabetes-user-data', methods=['POST'])
 def diabetes_predict():

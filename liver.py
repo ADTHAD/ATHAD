@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from flask import request
 
-def liver_prediction():
+def prediction():
     if request.method == 'POST':
         model_logreg = joblib.load("models/Liver_prediction_model/logreg.pkl")
 
@@ -44,9 +44,9 @@ def liver_prediction():
         print(data_to_predict)
         predicted_result = model_logreg.predict([data_to_predict])     
 
-        if predicted_result[0]==1:
-        	result='The person have Liver disease'
-        else:
-        	result = 'The person does not have liver disease'
-        return result
-        #return render_template("heart.html", pred=result) 
+def predict_liver_stuff():
+	if request.method == 'POST':
+		try:
+			return prediction()
+		except:
+			return 0
