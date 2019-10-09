@@ -49,7 +49,7 @@ $  python3 app.py
 
 ### Give this Project a Star :star:
 
-Please give this project a :star: if you found this project interesting and helpful.
+Please give this project a :star: if you found this project interesting and helpful.:heart_eyes:
 
 
-:tada: :confetti_ball: :smiley: _**Happy Contributing**_ :smiley: :confetti_ball: :tada:
+:hearts: :confetti_ball: :smiley: _**Happy Contributing**_ :smiley: :confetti_ball: :hearts:
