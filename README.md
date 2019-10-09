@@ -4,7 +4,8 @@
 	<img src="https://badges.frapsoft.com/os/v1/open-source.svg?v=103">	
 	<img src="https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg">
 	<img src="https://img.shields.io/circleci/project/github/badges/shields/master" alt="build status">
-	<img src="https://img.shields.io/badge/version-1.2-blue">	
+	<img src="https://img.shields.io/badge/version-1.2-blue">
+	<img src="https://img.shields.io/badge/License-MIT-green.svg">
 	</a>
 </p>
 
