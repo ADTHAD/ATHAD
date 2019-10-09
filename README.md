@@ -1,9 +1,14 @@
+
 <p align="center">
 	<a href="https://circleci.com/gh/badges/shields/tree/master">
-        <img src="https://img.shields.io/circleci/project/github/badges/shields/master" alt="build status"></a>
+	<img src="https://badges.frapsoft.com/os/v1/open-source.svg?v=103">	
+	<img src="https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg">
+	<img src="https://img.shields.io/circleci/project/github/badges/shields/master" alt="build status">
+	<img src="https://img.shields.io/badge/version-1.2-blue">	
+	</a>
 </p>
 
-### Stable release version: ![version](https://img.shields.io/badge/version-1.2-blue)
+
 
 # ATHAD
 Advanced Tools For Healthcare and Diagnostics.
@@ -42,3 +47,10 @@ $  pip install -r requirements.txt
 ```
 $  python3 app.py
 ```
+
+### Give this Project a Star :star:
+
+Please give this project a :star: if you found this project interesting and helpful.:heart_eyes:
+
+
+:hearts: :confetti_ball: :smiley: _**Happy Contributing**_ :smiley: :confetti_ball: :hearts:
