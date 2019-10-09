@@ -1,7 +1,9 @@
-[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)]
+
 <p align="center">
 	<a href="https://circleci.com/gh/badges/shields/tree/master">
-        <img src="https://img.shields.io/circleci/project/github/badges/shields/master" alt="build status"></a>
+        <img src="https://img.shields.io/circleci/project/github/badges/shields/master" alt="build status">
+	<img src="https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg">
+	</a>
 </p>
 
 ### Stable release version: ![version](https://img.shields.io/badge/version-1.2-blue)
